@@ -1,29 +1,38 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
-namespace SamplePlugin.Windows;
+namespace PartyFinderTemplates.Windows;
 
-public class ConfigWindow : Window, IDisposable
+public sealed class ConfigWindow : Window, IDisposable
 {
-    private Configuration Configuration;
+    private readonly Configuration Configuration;
+    private readonly Plugin Plugin;
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("A Wonderful Configuration Window###With a constant ID")
+    public ConfigWindow(Plugin plugin) : base("A Wonderful Configuration Window###PluginConfigWindow")
     {
+        this.Plugin = plugin;
+
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
         Size = new Vector2(232, 90);
-        SizeCondition = ImGuiCond.Always;
+        //SizeCondition = ImGuiCond.Always;
 
-        Configuration = plugin.Configuration;
+        Configuration = Plugin.Configuration;
+
+        //Open Config Menu from xlplugins
+        Services.PluginInterface.UiBuilder.OpenConfigUi += Toggle;
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        Services.PluginInterface.UiBuilder.OpenConfigUi -= Toggle;
+    }
 
     public override void PreDraw()
     {
@@ -54,6 +63,12 @@ public class ConfigWindow : Window, IDisposable
         {
             Configuration.IsConfigWindowMovable = movable;
             Configuration.Save();
+        }
+
+        var mainWindowVisible = Configuration.MainWindowVisible;
+        if (ImGui.Checkbox("Main Window Visible", ref mainWindowVisible))
+        {
+            Plugin.UI.Toggle();
         }
     }
 }
