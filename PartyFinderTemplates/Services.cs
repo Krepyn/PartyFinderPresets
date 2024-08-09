@@ -15,5 +15,6 @@ namespace PartyFinderTemplates
         [PluginService] public static IGameInteropProvider GameInteropProvider { get; set; } = null!;
         [PluginService] public static IPluginLog PluginLog { get; set; } = null!;
         [PluginService] public static IFramework Framework { get; set; } = null!;
+        [PluginService] public static IAddonLifecycle AddonLifecycle { get; set; } = null!;
     }
 }
