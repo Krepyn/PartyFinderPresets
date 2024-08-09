@@ -11,11 +11,7 @@ namespace PartyFinderTemplates.Windows;
 public sealed class MainWindow : Window, IDisposable
 {
     private readonly Plugin Plugin;
-    //private string GoatImagePath = Path.Combine(Services.PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
-    // We give this window a hidden ID using ##
-    // So that the user will see "My Amazing Window" as window title,
-    // but for ImGui the ID is "My Amazing Window##With a hidden ID"
     public MainWindow(Plugin plugin)
         : base("My Amazing Window##pluginMainWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
@@ -44,14 +40,6 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         ImGui.Spacing();
-/*
-        AddonStuff();
-        if (LookingForGroupCondition != null)
-        {
-            ImGui.Text($"{this.LookingForGroupCondition->AtkValues[44].Int}");
-            ImGui.Text($"{this.LookingForGroupCondition->AtkValues[249].Int}");
-            ImGui.Text($"{this.LookingForGroupCondition->AtkValues[260].Int}");
-        }*/
     }
 
     public void DrawOnConfig()
@@ -59,15 +47,6 @@ public sealed class MainWindow : Window, IDisposable
         if (Plugin.Configuration.MainWindowVisible)
             IsOpen = true;
     }
-    /*
-        private void AddonStuff()
-        {
-            LookingForGroupCondition = (AtkUnitBase*)Services.GameGui.GetAddonByName("LookingForGroupCondition").ToPointer();
-            if (LookingForGroupCondition != null)
-            {
-                return;
-            }
-        }*/
 
     public new bool DrawConditions()
     {

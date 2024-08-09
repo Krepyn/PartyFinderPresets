@@ -8,7 +8,10 @@ namespace PartyFinderTemplates
     {
         private static readonly Dictionary<string, string> CommandNames = new()
         {
-            ["/pmycommand"] = "A useful message to display in /xlhelp",
+            ["/pft"] = "Toggles the UI",
+#if DEBUG
+            ["/pftd"] = "Debug UI"
+#endif
         };
 
         private Plugin Plugin { get; }
@@ -27,7 +30,15 @@ namespace PartyFinderTemplates
 
         private void OnCommand(String command, string args)
         {
-            this.Plugin.UI.Toggle();
+            Services.PluginLog.Verbose($"Received Command: {command}, Args: {args}");
+
+
+            if (command.Equals("/pft"))
+                this.Plugin.UI.Toggle();
+#if DEBUG
+            else if (command.Equals("/pftd"))
+                this.Plugin.DebugWindow.Toggle();
+#endif
         }
 
         public void Dispose()
