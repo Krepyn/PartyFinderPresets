@@ -5,6 +5,7 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace PartyFinderTemplates.Windows;
 
@@ -28,20 +29,40 @@ public sealed class DebugWindow : Window, IDisposable
     public void Dispose() {
     }
 
-    public override void Draw()
+    public unsafe override void Draw()
     {
         if (ImGui.Button("Toggle Recruitment Update Hook"))
         {
             this.Plugin.GameFunctions.ToggleUpdateHook();
         }
-        if (ImGui.Button("AtkValue Test"))
+        if (ImGui.Button("Toggle Recruitment Window Hook"))
         {
-            this.Plugin.GameFunctions.ToggleUpdateHook();
+            this.Plugin.GameFunctions.ToggleCriteriaWindowHook();
         }
+        if (ImGui.Button("AddonUpdate Test #params (0,0) - Recruitment Criteria"))
+        {
+            this.Plugin.GameFunctions.LoadRecruitmentCriteriaUpdate(0);
+        }        
+        if (ImGui.Button("AddonUpdate Test #params (0,1)"))
+        {
+            this.Plugin.GameFunctions.LoadRecruitmentCriteriaUpdate(0, 1);
+        }
+        if (ImGui.Button("AddonUpdate Test #params (1,0)"))
+        {
+            this.Plugin.GameFunctions.LoadRecruitmentCriteriaUpdate(1);
+        }
+        //onRequestedUpdate Test on addon
+        //if (ImGui.Button("Refresh Test"))
+        //{
+        //    var x = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition");
+        //    x->OnRequestedUpdate(&AtkStage.Instance()->AtkArrayDataHolder->NumberArrays[71], &AtkStage.Instance()->AtkArrayDataHolder->StringArrays[66]);
+        //    Services.PluginLog.Verbose($"{x->NameString}");
+        //}
         if (ImGui.Button("AvgItemLv On"))
         {
             this.Plugin.GameFunctions.AvgItemLvOn();
         }
+        
         if (ImGui.Button("AvgItemLv Off"))
         {
             this.Plugin.GameFunctions.AvgItemLvOff();
@@ -69,6 +90,7 @@ public sealed class DebugWindow : Window, IDisposable
     }
 
     /*
+    // Displaying stuff from Addon AtkValues
     private void AddonStuff()
     {
         LookingForGroupCondition = (AtkUnitBase*)Services.GameGui.GetAddonByName("LookingForGroupCondition").ToPointer();
