@@ -6,6 +6,12 @@ using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using PartyFinderTemplates.Controllers;
+using PartyFinderTemplates.Classes;
+using Newtonsoft.Json;
+using System.IO;
+using Newtonsoft.Json.Converters;
+using System.Xml.Linq;
 
 namespace PartyFinderTemplates.Windows;
 
@@ -13,6 +19,7 @@ public sealed class DebugWindow : Window, IDisposable
 {
     private readonly Plugin Plugin;
     public AtkValue[] AtkValues = null!;
+    private string presetName = "";
 
     public DebugWindow(Plugin plugin)
         : base("Debug##pluginDebugWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
@@ -30,7 +37,36 @@ public sealed class DebugWindow : Window, IDisposable
     }
 
     public unsafe override void Draw()
-    {
+    {  
+        if (ImGui.Button("Get Current Recruitment Data"))
+        {
+            Plugin.RecruitmentDataController.SaveNewPresetAndPrint("");
+        }
+        if (ImGui.Button("Save Current Data as Json"))       
+        {
+            Plugin.RecruitmentDataController.SavePresetList();
+        }
+        if (ImGui.Button("RecruitmentSub - Turn ilvl on"))
+        {
+            *(Plugin.RecruitmentDataController.CurrentData.AvgItemLvEnabled) = 1;
+        }
+
+
+        ImGui.InputText($"{presetName}", ref presetName, 128);
+        ImGui.SameLine();
+        if (ImGui.Button("Save Preset"))
+        {
+            Plugin.RecruitmentDataController.SaveNewPreset(presetName);
+        }
+
+        ImGui.Spacing();
+        ImGui.Text("---Old---");
+        ImGui.Spacing();
+
+        if (ImGui.Button("RC Refresh #params (0,0)"))
+        {
+            this.Plugin.GameFunctions.RCRefresh(0, 0);
+        }
         if (ImGui.Button("Toggle Recruitment Update Hook"))
         {
             this.Plugin.GameFunctions.ToggleUpdateHook();
@@ -39,25 +75,6 @@ public sealed class DebugWindow : Window, IDisposable
         {
             this.Plugin.GameFunctions.ToggleCriteriaWindowHook();
         }
-        if (ImGui.Button("AddonUpdate Test #params (0,0) - Recruitment Criteria"))
-        {
-            this.Plugin.GameFunctions.LoadRecruitmentCriteriaUpdate(0);
-        }        
-        if (ImGui.Button("AddonUpdate Test #params (0,1)"))
-        {
-            this.Plugin.GameFunctions.LoadRecruitmentCriteriaUpdate(0, 1);
-        }
-        if (ImGui.Button("AddonUpdate Test #params (1,0)"))
-        {
-            this.Plugin.GameFunctions.LoadRecruitmentCriteriaUpdate(1);
-        }
-        //onRequestedUpdate Test on addon
-        //if (ImGui.Button("Refresh Test"))
-        //{
-        //    var x = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition");
-        //    x->OnRequestedUpdate(&AtkStage.Instance()->AtkArrayDataHolder->NumberArrays[71], &AtkStage.Instance()->AtkArrayDataHolder->StringArrays[66]);
-        //    Services.PluginLog.Verbose($"{x->NameString}");
-        //}
         if (ImGui.Button("AvgItemLv On"))
         {
             this.Plugin.GameFunctions.AvgItemLvOn();
@@ -85,26 +102,13 @@ public sealed class DebugWindow : Window, IDisposable
                 ImGui.Text($"{AtkValues[2].Bool}");
             }
         }
-            ImGui.Spacing();
-        //AddonStuff();
+
+        //onRequestedUpdate Test on addon
+        //if (ImGui.Button("Refresh Test"))
+        //{
+        //    var x = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition");
+        //    x->OnRequestedUpdate(&AtkStage.Instance()->AtkArrayDataHolder->NumberArrays[71], &AtkStage.Instance()->AtkArrayDataHolder->StringArrays[66]);
+        //    Services.PluginLog.Verbose($"{x->NameString}");
+        //}
     }
-
-    /*
-    // Displaying stuff from Addon AtkValues
-    private void AddonStuff()
-    {
-        LookingForGroupCondition = (AtkUnitBase*)Services.GameGui.GetAddonByName("LookingForGroupCondition").ToPointer();
-        if (LookingForGroupCondition != null)
-        {
-            return;
-        }
-
-            
-        if (LookingForGroupCondition != null)
-        {
-            ImGui.Text($"{this.LookingForGroupCondition->AtkValues[44].Int}");
-            ImGui.Text($"{this.LookingForGroupCondition->AtkValues[249].Int}");
-            ImGui.Text($"{this.LookingForGroupCondition->AtkValues[260].Int}");
-        }
-    }*/
 }

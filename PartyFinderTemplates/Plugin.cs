@@ -1,6 +1,8 @@
 using Dalamud.Plugin;
 using Dalamud.Interface.Windowing;
 using PartyFinderTemplates.Windows;
+using PartyFinderTemplates.Classes;
+using PartyFinderTemplates.Controllers;
 
 namespace PartyFinderTemplates;
 
@@ -10,14 +12,14 @@ public sealed class Plugin : IDalamudPlugin
     public readonly GameFunctions GameFunctions;
     public readonly Commands Commands;
     public readonly WindowSystem WindowSystem = new("PartyFinderTemplates");
+    public RecruitmentDataController RecruitmentDataController;
+
     public readonly ConfigWindow ConfigWindow;
     public readonly MainWindow UI;
 #if DEBUG
     public readonly DebugWindow DebugWindow;
 #endif
 
-    //private unsafe AddonLookingForGroupDetail
-    //    AddonLookingForGroupCondition* AddonNamePlate => (AddonNamePlate*)Services.GameGui.GetAddonByName("NamePlate");
 
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
@@ -27,6 +29,7 @@ public sealed class Plugin : IDalamudPlugin
         Configuration = Configuration.Load();
         GameFunctions = new GameFunctions(this);
         Commands = new Commands(this);
+        RecruitmentDataController = new RecruitmentDataController();
 
         //Windows
         ConfigWindow = new ConfigWindow(this);
