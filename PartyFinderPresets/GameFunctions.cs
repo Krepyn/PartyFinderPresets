@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 
-namespace PartyFinderTemplates;
+namespace PartyFinderPresets;
 
 
 public sealed unsafe class GameFunctions : IDisposable

@@ -4,7 +4,7 @@ using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System.Xml.Linq;
 
-namespace PartyFinderTemplates.Structs;
+namespace PartyFinderPresets.Structs;
 
 public unsafe class RecruitmentSub
 {

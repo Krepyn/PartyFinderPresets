@@ -1,8 +1,8 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
-using PartyFinderTemplates.Classes;
-using PartyFinderTemplates.Structs;
+using PartyFinderPresets.Classes;
+using PartyFinderPresets.Structs;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -10,7 +10,7 @@ using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 using static FFXIVClientStructs.FFXIV.Common.Component.BGCollision.MeshPCB;
 using System.IO;
 
-namespace PartyFinderTemplates.Controllers;
+namespace PartyFinderPresets.Controllers;
 
 public class RecruitmentDataController
 {

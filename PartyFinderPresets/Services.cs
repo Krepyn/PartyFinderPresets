@@ -2,7 +2,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
-namespace PartyFinderTemplates
+namespace PartyFinderPresets
 {
     public sealed class Services
     {

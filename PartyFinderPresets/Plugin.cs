@@ -1,10 +1,10 @@
 using Dalamud.Plugin;
 using Dalamud.Interface.Windowing;
-using PartyFinderTemplates.Windows;
-using PartyFinderTemplates.Classes;
-using PartyFinderTemplates.Controllers;
+using PartyFinderPresets.Windows;
+using PartyFinderPresets.Classes;
+using PartyFinderPresets.Controllers;
 
-namespace PartyFinderTemplates;
+namespace PartyFinderPresets;
 
 public sealed class Plugin : IDalamudPlugin
 {

@@ -1,5 +1,5 @@
 using Dalamud.Game.Gui.PartyFinder.Types;
-using PartyFinderTemplates.Structs;
+using PartyFinderPresets.Structs;
 using System;
 using System.Runtime.InteropServices;
 using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Runtime.CompilerServices;
 
-namespace PartyFinderTemplates.Classes;
+namespace PartyFinderPresets.Classes;
 
 //[JsonConverter(typeof(RecruitmentDataJsonConverter))]
 public class RecruitmentData

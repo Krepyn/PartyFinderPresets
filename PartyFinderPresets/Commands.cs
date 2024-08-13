@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Dalamud.Game.Command;
 
-namespace PartyFinderTemplates
+namespace PartyFinderPresets
 {
     public sealed class Commands : IDisposable
     {

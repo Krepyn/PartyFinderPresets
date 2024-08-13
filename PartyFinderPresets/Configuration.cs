@@ -2,7 +2,7 @@ using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
 
-namespace PartyFinderTemplates;
+namespace PartyFinderPresets;
 
 [Serializable]
 public class Configuration : IPluginConfiguration

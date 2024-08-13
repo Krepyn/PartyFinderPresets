@@ -6,14 +6,14 @@ using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using PartyFinderTemplates.Controllers;
-using PartyFinderTemplates.Classes;
+using PartyFinderPresets.Controllers;
+using PartyFinderPresets.Classes;
 using Newtonsoft.Json;
 using System.IO;
 using Newtonsoft.Json.Converters;
 using System.Xml.Linq;
 
-namespace PartyFinderTemplates.Windows;
+namespace PartyFinderPresets.Windows;
 
 public sealed class DebugWindow : Window, IDisposable
 {

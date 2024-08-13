@@ -6,7 +6,7 @@ using System.IO;
 using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
-namespace PartyFinderTemplates.Windows;
+namespace PartyFinderPresets.Windows;
 
 public sealed class MainWindow : Window, IDisposable
 {
