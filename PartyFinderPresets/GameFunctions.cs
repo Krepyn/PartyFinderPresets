@@ -5,6 +5,9 @@ using System;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace PartyFinderPresets;
 
@@ -12,7 +15,7 @@ namespace PartyFinderPresets;
 public sealed unsafe class GameFunctions : IDisposable
 {
     private readonly Plugin Plugin;
-    private readonly AgentLookingForGroup* LookingForGroupAgent; // LookingForGroupAgent Address
+    private readonly AgentLookingForGroup* LookingForGroupAgent;
     private bool conditionEnabled = false;
 
     // For sending manual updates
@@ -35,23 +38,23 @@ public sealed unsafe class GameFunctions : IDisposable
     [Signature("E8 ?? ?? ?? ?? 4D 89 BE ?? ?? ?? ?? 4D 89 BE")]
     private readonly Hook<RCRefreshHookDelegate>? _addonRefreshHook;
 
+    // 0 if leader
+    private delegate ulong getPartyLeaderContentIDDelegate(AgentLookingForGroup* param1);
+    [Signature("E8 ?? ?? ?? ?? 48 85 C0 75 ?? F6 83 ")]
+    private readonly getPartyLeaderContentIDDelegate? _partyLeader;
 
     public GameFunctions(Plugin Plugin)
     {
         this.Plugin = Plugin;
-
         LookingForGroupAgent = AgentLookingForGroup.Instance();
 
         Services.GameInteropProvider.InitializeFromAttributes(this);
 
-        // Register Listeners for Opening and Closing Recruitment Criteria Window
         Services.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, addonName:"LookingForGroupCondition", OnConditionEvent);
         Services.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, addonName: "LookingForGroupCondition", OnConditionEvent);
-
     }
 
     public void Dispose() {
-        // Unregister Listeners for Recruitment Criteria Window
         Services.AddonLifecycle.UnregisterListener(OnConditionEvent);
         //Services.AddonLifecycle.UnregisterListener(OnEvent);
 
@@ -66,8 +69,11 @@ public sealed unsafe class GameFunctions : IDisposable
         _addonRefreshHook!.Original(param1, param2, param3);
     }
 
-    //Offsets in this function for param 1, for different things are tied to Recruitment Criteria window and an offset from LookingForGroup Agent
-    //Param 2 Array of AtkValues, 3 values max(?)
+    public ulong GetPartyLeaderContentID() {
+        return _partyLeader!.Invoke(LookingForGroupAgent);
+    }
+
+    // Param 2 Array of AtkValues, 3 values max(?)
     public void RCUpdateValuesHook(AgentLookingForGroup* param1, AtkValue* param2)
     {
         if (this._updateValuesHook == null)
@@ -87,41 +93,33 @@ public sealed unsafe class GameFunctions : IDisposable
         return;
     }
 
-    // Send AtkValue Array with data to change recruitment criteria fields in AgentLookingForGroup
-    // Will change the functionality with RecruitmentSub from AgentLookingForGroup once Infi's pr is gone through
+    // Send AtkValue Array[3] to change recruitment criteria fields in AgentLookingForGroup
     private void RCUpdateValues(AtkValue* Value) {
-        //if (conditionEnabled)
-        //{
+        if (conditionEnabled)
+        {
             this._updateValues!.Invoke(LookingForGroupAgent, Value);
-        //}
+        }
     }
 
     // Refresh Recruitment Criteria Menu
-    // Current Recruitment Status => 0 = Not Currently Reloading, 1 = Currently Recruiting
-    // Unknown => 0 or 1, doesn't change the outcome
+    // param1: Current Recruitment Status => 0 = Not Currently Recruiting, 1 = Currently Recruiting
+    // param2: Unknown => 0 or 1, doesn't change the outcome
     public void RCRefresh(ulong param1, int param2 = 0)
     {
-        if (conditionEnabled)
-        {
+        if(conditionEnabled) {
             this._addonRefresh!.Invoke(LookingForGroupAgent, param1, (char)param2);
+        } else {
+            Services.PluginLog.Verbose("LookingForGroupCondition is not open.");
         }
     }
 
-    // Event Handler
     private void OnConditionEvent(AddonEvent type, AddonArgs args)
     {
-        if (type == AddonEvent.PreDraw)
-        {
-#if DEBUG
-            Plugin.DebugWindow.IsOpen = true;
-#endif
+        if(type == AddonEvent.PreDraw) {
+            Plugin.MainWindow.IsOpen = true;
             conditionEnabled = true;
-        }
-        else if (type == AddonEvent.PreFinalize)
-        {
-#if DEBUG
-            Plugin.DebugWindow.IsOpen = false;
-#endif
+        } else if(type == AddonEvent.PreFinalize) {
+            Plugin.MainWindow.IsOpen = false;
             conditionEnabled = false;
         }
     }
@@ -130,11 +128,19 @@ public sealed unsafe class GameFunctions : IDisposable
 
     // Temporary Eventhandler to see what events are invoked
     private void OnEvent(AddonEvent type, AddonArgs args) {
-
         Services.PluginLog.Verbose($"Event Called: {type} to {args.AddonName}");
-
     }
 
+    public void SendString() {
+        Services.PluginLog.Verbose("Sent string");
+
+        AtkValue[] Value = new AtkValue[3];
+        Value[0].SetInt(15);
+        Value[1].SetManagedString("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+        fixed(AtkValue* ValuePtr = &Value[0])
+            RCUpdateValues(ValuePtr);
+    }
     public void AvgItemLvOff()
     {
         Services.PluginLog.Verbose("Avg Item Level has been turned off.");
@@ -145,7 +151,7 @@ public sealed unsafe class GameFunctions : IDisposable
         Value[2].SetBool(false);
 
         fixed (AtkValue* ValuePtr = &Value[0])
-            RCUpdateValues(ValuePtr);
+        RCUpdateValues(ValuePtr);
     }
 
     public void AvgItemLvOn()
@@ -159,17 +165,15 @@ public sealed unsafe class GameFunctions : IDisposable
         Value[2].SetBool(true);
 
         fixed (AtkValue* ValuePtr = &Value[0])
-            RCUpdateValues(ValuePtr);
+        RCUpdateValues(ValuePtr);
     }
 
-    // Toggles _conditionUpdate hook
     public void ToggleUpdateHook()
     {
         if (this._updateValuesHook == null)
             return;
 
-        if (this._updateValuesHook.IsEnabled)
-        {
+        if (this._updateValuesHook.IsEnabled) {
             Services.PluginLog.Verbose("Disabled Update Hook.");
             _updateValuesHook?.Disable();
         } else {
@@ -178,17 +182,14 @@ public sealed unsafe class GameFunctions : IDisposable
         }
     }
 
-    // Toggles _addonUpdateHook 
     public void ToggleCriteriaWindowHook()
     {
         if(this._addonRefreshHook == null) return;
 
-        if (this._addonRefreshHook.IsEnabled)
-        {
+        if (this._addonRefreshHook.IsEnabled) {
             Services.PluginLog.Verbose("Disabled Window Hook.");
             this._addonRefreshHook?.Disable();
-        } else
-        {
+        } else {
             Services.PluginLog.Verbose("Enabled Window Hook.");
             this._addonRefreshHook?.Enable();
         }

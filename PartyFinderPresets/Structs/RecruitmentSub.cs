@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System.Xml.Linq;
+using PartyFinderPresets.Enums;
+using System.Runtime.InteropServices;
 
 namespace PartyFinderPresets.Structs;
 
@@ -37,6 +39,8 @@ public unsafe class RecruitmentSub
     public ulong* _slotFlags; // array size 48
     public byte* _comment;  // array size 192
 
+    public CategoryTab* CategoryTab;
+
     // Other
     private readonly AgentLookingForGroup* LookingForGroupAgent;
 
@@ -60,13 +64,14 @@ public unsafe class RecruitmentSub
         ["_comment"] = 0x330,
         ["AvgItemLv"] = 0x14E4,
         ["AvgItemLvEnabled"] = 0x14E6,
+        ["CategoryTab"] = 0x3104,
     };
 
     public RecruitmentSub()
     {
         LookingForGroupAgent = AgentLookingForGroup.Instance();
 
-        // Game Data Pointers
+        // Game Data Pointers offset from LookingForGroupAgent
         AvgItemLv = (ushort*)((byte*)LookingForGroupAgent + dataOffsets["AvgItemLv"]);
         AvgItemLvEnabled = (byte*)LookingForGroupAgent + dataOffsets["AvgItemLvEnabled"];
         SelectedCategory = (SelectedCategory*)((byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["SelectedCategory"]);
@@ -84,6 +89,7 @@ public unsafe class RecruitmentSub
         NumberOfGroups = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["NumberOfGroups"];
         _slotFlags = (ulong*)((byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["_slotFlags"]);
         _comment = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["_comment"];
+        CategoryTab = (CategoryTab*) (byte*)LookingForGroupAgent + dataOffsets["CategoryTab"];
     }
     public static RecruitmentSub GetCurrentData()
     {
@@ -111,7 +117,7 @@ public enum DutyFinderSetting : byte
 {
     None = 0,
     UnrestrictedParty = 1,
-    MinimumIL = 2,
+    MinimumILv = 2,
     SilenceEcho = 4,
 }
 

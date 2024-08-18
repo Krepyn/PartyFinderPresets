@@ -12,17 +12,37 @@ using Newtonsoft.Json;
 using System.IO;
 using Newtonsoft.Json.Converters;
 using System.Xml.Linq;
+using System.Linq;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.ComponentModel;
+using System.Reflection.Metadata.Ecma335;
+using PartyFinderPresets.Structs;
+using PartyFinderPresets.Utils;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.ImGuiSeStringRenderer;
+using Dalamud.Interface;
+using static Lumina.Data.Parsing.Uld.NodeData;
+using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using Dalamud.Memory;
+using System.Security.Cryptography;
 
 namespace PartyFinderPresets.Windows;
 
-public sealed class DebugWindow : Window, IDisposable
+public unsafe sealed class DebugWindow : Window, IDisposable
 {
     private readonly Plugin Plugin;
     public AtkValue[] AtkValues = null!;
     private string presetName = "";
+    private string longValueS = "1";
+    private long longValue = 0;
+    //private string presetIndex = "0";
+    private nint testStr;
 
     public DebugWindow(Plugin plugin)
-        : base("Debug##pluginDebugWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+        : base("Debug##PFPDebugWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoResize)
     {
         this.Plugin = plugin;
 
@@ -34,35 +54,91 @@ public sealed class DebugWindow : Window, IDisposable
     }
 
     public void Dispose() {
+        Marshal.FreeHGlobal((nint)testStr);
     }
 
     public unsafe override void Draw()
-    {  
-        if (ImGui.Button("Get Current Recruitment Data"))
+    {
+        if (ImGui.Button("Save Preset Library"))
         {
-            Plugin.RecruitmentDataController.SaveNewPresetAndPrint("");
+            Plugin.RecruitmentDataController.Save();
         }
-        if (ImGui.Button("Save Current Data as Json"))       
+        if (ImGui.Button("Load Preset Library"))
         {
-            Plugin.RecruitmentDataController.SavePresetList();
+            Plugin.RecruitmentDataController.Load();
         }
-        if (ImGui.Button("RecruitmentSub - Turn ilvl on"))
-        {
-            *(Plugin.RecruitmentDataController.CurrentData.AvgItemLvEnabled) = 1;
+        if(ImGui.Button("partyleadercontentid")) {
+            var partyLeaderId = Plugin.GameFunctions.GetPartyLeaderContentID();
+            Services.PluginLog.Verbose($"{partyLeaderId:X}");
+        }
+        if(ImGui.Button("setstring")) {
+            Plugin.GameFunctions.SendString();
+        }
+        var x = SelectedCategory.VandCDungeonFinder;        
+        ImGui.Text($"{Helpers.GapsBeforeCapitals(x.ToString(), true)}");
+
+        x = (SelectedCategory)2;
+        ImGui.Text($"{Enum.IsDefined(typeof(SelectedCategory), x)}");
+
+        ImGui.InputText($"##longtoulong", ref longValueS, 128);
+        longValue = long.Parse(longValueS);
+        ImGui.SameLine();
+        ImGui.Text($" | ");
+        ImGui.SameLine();
+        ImGui.Text($"{(ulong)longValue}");
+
+        if(ImGui.Button("node traverse test")) {
+            var baseResNode = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition")->GetNodeById(18);
+            var componentNode = (AtkComponentTextInput*) baseResNode->ChildNode->GetComponent();
+            var textNode = componentNode->AtkTextNode->NextSiblingNode->GetAsAtkTextNode();
+            Services.PluginLog.Verbose($"{textNode->NodeText}");
+            //testStr = (byte*)Marshal.AllocHGlobal(128);
+
+            var str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+            // Utf8String aastr = new Utf8String();
+            // var input = new Utf8String(str);
+            // var output = new Utf8String();
+            // input.Copy(PronounModule.Instance()->ProcessString(&input, true));
+            // output.Copy(PronounModule.Instance()->ProcessString(&input, false));
+            // return ouput.AsSpan().ToArray();           
+
         }
 
+        //        var seStringDrawParams = new SeStringDrawParams();
+        //        //seStringDrawParams.TargetDrawList = null;
+        //        seStringDrawParams.WrapWidth = 408;
+        //        seStringDrawParams.FontSize = 18;
+        //        ImGui.PushFont(UiBuilder.DefaultFont);
+        //        var stringi = "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii";
+        //        var stringa = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        //        var stringa2 = "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOii";
+        //#pragma warning disable SeStringRenderer
+        //        var seString = ImGuiHelpers.CompileSeStringWrapped(stringi, seStringDrawParams);
+        //        var seString2 = ImGuiHelpers.CompileSeStringWrapped(stringa, seStringDrawParams);
+        //        var seString3 = ImGuiHelpers.CompileSeStringWrapped(stringa2, seStringDrawParams);
+        //        ImGui.PopFont();
 
-        ImGui.InputText($"{presetName}", ref presetName, 128);
+        ImGui.InputText($"##savepreset", ref presetName, 128);
         ImGui.SameLine();
         if (ImGui.Button("Save Preset"))
         {
             Plugin.RecruitmentDataController.SaveNewPreset(presetName);
+            presetName = "";
+        }
+
+        if (ImGui.Button("RecruitmentSub - Turn ilvl on"))
+        {
+            *(Plugin.RecruitmentDataController.CurrentData.AvgItemLvEnabled) = 1;
         }
 
         ImGui.Spacing();
         ImGui.Text("---Old---");
         ImGui.Spacing();
 
+        if(ImGui.Button("Save Current Preset and Print")) {
+            Plugin.RecruitmentDataController.SaveNewPresetAndPrint("");
+        }
         if (ImGui.Button("RC Refresh #params (0,0)"))
         {
             this.Plugin.GameFunctions.RCRefresh(0, 0);
@@ -103,12 +179,34 @@ public sealed class DebugWindow : Window, IDisposable
             }
         }
 
-        //onRequestedUpdate Test on addon
-        //if (ImGui.Button("Refresh Test"))
-        //{
-        //    var x = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition");
-        //    x->OnRequestedUpdate(&AtkStage.Instance()->AtkArrayDataHolder->NumberArrays[71], &AtkStage.Instance()->AtkArrayDataHolder->StringArrays[66]);
-        //    Services.PluginLog.Verbose($"{x->NameString}");
-        //}
+        //// OMGGGGGGGGGGGGGGGGGGGGGG
+        if (ImGui.Button("Refresh Test"))
+        {
+            var baseResNode = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition")->GetNodeById(18);
+            var componentNode = (AtkComponentTextInput*)baseResNode->ChildNode->GetComponent();
+            var textNode = componentNode->AtkTextNode->GetAsAtkTextNode();
+            var textNodeStr = textNode->NodeText;
+
+            SeStringBuilder seStringB = new SeStringBuilder();
+            seStringB.AddText("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            SeString seString = seStringB.BuiltString;
+            byte[] bytes = seString.EncodeWithNullTerminator();
+
+            testStr = Marshal.AllocHGlobal(bytes.Length);
+            Marshal.Copy(bytes, 0, testStr, bytes.Length);
+            componentNode->SetText((byte*)testStr);
+
+            Services.PluginLog.Verbose($"refreshed");
+        }
+
+        if(ImGui.Button("pr'nt str")) {
+            var baseResNode = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition")->GetNodeById(18);
+            var componentNode = (AtkComponentTextInput*)baseResNode->ChildNode->GetComponent();
+            var textNode = componentNode->AtkTextNode->GetAsAtkTextNode();
+            var textNodeStr = textNode->NodeText;
+
+            Services.PluginLog.Verbose($"{textNodeStr}");
+        }
+
     }
 }
