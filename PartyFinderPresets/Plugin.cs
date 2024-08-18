@@ -15,7 +15,7 @@ public sealed class Plugin : IDalamudPlugin
     public RecruitmentDataController RecruitmentDataController;
 
     public readonly ConfigWindow ConfigWindow;
-    public readonly MainWindow UI;
+    public readonly MainWindow MainWindow;
 #if DEBUG
     public readonly DebugWindow DebugWindow;
 #endif
@@ -29,17 +29,18 @@ public sealed class Plugin : IDalamudPlugin
         Configuration = Configuration.Load();
         GameFunctions = new GameFunctions(this);
         Commands = new Commands(this);
-        RecruitmentDataController = new RecruitmentDataController();
+        RecruitmentDataController = new RecruitmentDataController(this);
 
         //Windows
         ConfigWindow = new ConfigWindow(this);
-        UI = new MainWindow(this);
-        WindowSystem.AddWindow(UI);
+        MainWindow = new MainWindow(this);
+        WindowSystem.AddWindow(MainWindow);
         WindowSystem.AddWindow(ConfigWindow);
 
 #if DEBUG
         DebugWindow = new DebugWindow(this);
         WindowSystem.AddWindow(DebugWindow);
+        DebugWindow.IsOpen = true;
 #endif
 
         Services.PluginInterface.UiBuilder.Draw += DrawUI;
@@ -52,7 +53,7 @@ public sealed class Plugin : IDalamudPlugin
 
         WindowSystem.RemoveAllWindows();
         ConfigWindow.Dispose();
-        UI.Dispose();
+        MainWindow.Dispose();
 #if DEBUG
         DebugWindow.Dispose();
 #endif

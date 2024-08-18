@@ -1,17 +1,21 @@
 using Dalamud.Configuration;
-using Dalamud.Plugin;
+using PartyFinderPresets.Classes;
 using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace PartyFinderPresets;
+
 
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
-    public int Version { get; set; } = 0;
+    private const int CURRENT_VERSION = 0;
 
+    public int Version { get; set; } = 0;
     public bool IsConfigWindowMovable { get; set; } = true;
     public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
-    public bool MainWindowVisible { get; set; } = false;
+    public bool PresetsDockVisible { get; set; } = true;
 
     public static Configuration Load()
         => Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -20,4 +24,5 @@ public class Configuration : IPluginConfiguration
     {
         Services.PluginInterface.SavePluginConfig(this);
     }
+
 }

@@ -13,7 +13,7 @@ public sealed class ConfigWindow : Window, IDisposable
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("A Wonderful Configuration Window###PluginConfigWindow")
+    public ConfigWindow(Plugin plugin) : base("PartyFinderPresets Config###PFPConfigWindow")
     {
         this.Plugin = plugin;
 
@@ -25,7 +25,6 @@ public sealed class ConfigWindow : Window, IDisposable
 
         Configuration = Plugin.Configuration;
 
-        //Open Config Menu from xlplugins
         Services.PluginInterface.UiBuilder.OpenConfigUi += Toggle;
     }
 
@@ -36,25 +35,18 @@ public sealed class ConfigWindow : Window, IDisposable
 
     public override void PreDraw()
     {
-        // Flags must be added or removed before Draw() is being called, or they won't apply
         if (Configuration.IsConfigWindowMovable)
-        {
             Flags &= ~ImGuiWindowFlags.NoMove;
-        }
         else
-        {
             Flags |= ImGuiWindowFlags.NoMove;
-        }
     }
 
     public override void Draw()
     {
-        // can't ref a property, so use a local copy
         var configValue = Configuration.SomePropertyToBeSavedAndWithADefault;
         if (ImGui.Checkbox("Random Config Bool", ref configValue))
         {
             Configuration.SomePropertyToBeSavedAndWithADefault = configValue;
-            // can save immediately on change, if you don't want to provide a "Save and Close" button
             Configuration.Save();
         }
 
@@ -65,10 +57,11 @@ public sealed class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        var mainWindowVisible = Configuration.MainWindowVisible;
-        if (ImGui.Checkbox("Main Window Visible", ref mainWindowVisible))
+        var presetsDockVisible = Configuration.PresetsDockVisible;
+        if (ImGui.Checkbox("Main Window Visible", ref presetsDockVisible))
         {
-            Plugin.UI.Toggle();
+            Configuration.PresetsDockVisible = presetsDockVisible;
+            Configuration.Save();
         }
     }
 }
