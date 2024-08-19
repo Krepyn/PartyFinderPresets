@@ -1,9 +1,5 @@
 using Dalamud.Configuration;
-using PartyFinderPresets.Classes;
 using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
-
 namespace PartyFinderPresets;
 
 
@@ -14,15 +10,10 @@ public class Configuration : IPluginConfiguration
 
     public int Version { get; set; } = 0;
     public bool IsConfigWindowMovable { get; set; } = true;
-    public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
     public bool PresetsDockVisible { get; set; } = true;
 
     public static Configuration Load()
         => Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
-    public void Save()
-    {
-        Services.PluginInterface.SavePluginConfig(this);
-    }
-
+    public void Save() => Services.PluginInterface.SavePluginConfig(this);
 }

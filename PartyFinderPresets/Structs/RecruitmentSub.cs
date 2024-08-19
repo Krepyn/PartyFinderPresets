@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using System.Xml.Linq;
 using PartyFinderPresets.Enums;
-using System.Runtime.InteropServices;
 
 namespace PartyFinderPresets.Structs;
 

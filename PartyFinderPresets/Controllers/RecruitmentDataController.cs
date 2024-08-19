@@ -8,16 +8,9 @@ using System.IO;
 using System.Linq;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json.Converters;
-using Dalamud.Interface.ImGuiSeStringRenderer;
-using Dalamud.Interface.Utility;
-using Dalamud.Game.Text.SeStringHandling;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using FFXIVClientStructs.FFXIV.Client.System.String;
-using System.Threading;
-using System.Security.Cryptography;
-using System.Text;
 using PartyFinderPresets.Utils;
 namespace PartyFinderPresets.Controllers;
 
@@ -82,14 +75,6 @@ public unsafe class RecruitmentDataController : IDisposable
         return RecruitmentPresets.Count;
     }
 
-    // Debug
-    public void SaveNewPresetAndPrint(string Name) {
-        var x = new RecruitmentData(Name);
-        RecruitmentPresets.Add(x);
-        this.Save();
-        x.PrintData();
-    }
-
     public unsafe void LoadPreset(int index) {
         var listToLoad = RecruitmentPresets[index];
 
@@ -135,6 +120,7 @@ public unsafe class RecruitmentDataController : IDisposable
 
         *CurrentData.OnePlayerPerJob = (byte)(listToLoad.OnePlayerPerJob ? 1 : 0);
 
+        // TODO add slot shifting depending on current party members
         var slotFlags = listToLoad._slotFlags;
         var numberOfGroups = (listToLoad.NumberOfGroups <= 6 && listToLoad.NumberOfGroups > 0) ? listToLoad.NumberOfGroups : 1;
         for(var i = 1; i < 8 * numberOfGroups; i++) {
@@ -148,7 +134,6 @@ public unsafe class RecruitmentDataController : IDisposable
             Services.PluginLog.Verbose($"Slot {i+1} has been loaded.");
         }
 
-        // TODO load comment
         var commentString = listToLoad._seStrComment;
         var valid = isCommentValid(commentString);
         Services.PluginLog.Info($"{valid}");
@@ -162,15 +147,15 @@ public unsafe class RecruitmentDataController : IDisposable
         Services.PluginLog.Info($"Preset: {listToLoad.Name} has been loaded.");
     }
 
-    // Returns true if the wrapped string is the same as non-wrapped string
-    // This should always be fine except if json is manually edited
-    public unsafe bool isCommentValid(byte[] bytes) {
+    // Returns true if the AtkTextInputComponent wrapped comment is the same as non-wrapped comment
+    // This should always return true except if json was manually edited
+    public bool isCommentValid(byte[] bytes) {
         var baseResNode = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition")->GetNodeById(18);
         var componentNode = (AtkComponentTextInput*)baseResNode->ChildNode->GetComponent();
         var textNode = componentNode->AtkTextNode->GetAsAtkTextNode(); // Actual Text Node
         // var textNode2 = componentNode->AtkTextNode->NextSiblingNode->GetAsAtkTextNode(); // Line Count Node
 
-        //SetText on TextInputComponent to wrap it inside the textinput, so we can get the how many lines it takes value
+        // SetText on TextInputComponent to wrap it inside the textinput, so we can get the how many lines it takes value
         Marshal.Copy(bytes, 0, testStr, bytes.Length);
         componentNode->SetText((byte*)testStr);
         var aa = componentNode->UnkText1;
@@ -218,8 +203,10 @@ public unsafe class RecruitmentDataController : IDisposable
         if(selectedCategory == SelectedCategory.TreasureHunt)
             return dutyId <= 23;
 
-        if(selectedCategory == SelectedCategory.Fates)
-            return validFateTerritoryType(dutyId);
+        if(selectedCategory == SelectedCategory.Fates) {
+            if(dutyId == 0) return true;
+            else return validFateTerritoryType(dutyId);
+        }
 
         if(selectedCategory == SelectedCategory.TheHunt)
             return true;
@@ -241,7 +228,6 @@ public unsafe class RecruitmentDataController : IDisposable
         return false;
     }
 
-    // null if not, ContentFinderCondition entry if yes
     public static ContentFinderCondition? findCondition(ushort dutyId) {        
         return Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(row: dutyId);
     }
@@ -258,13 +244,7 @@ public unsafe class RecruitmentDataController : IDisposable
         if(condition.HighEndDuty) return SelectedCategory.HighendDuty; // Highend
 
         Dictionary<string, int> contentTypeToCategory = new() {
-            ["Dungeons"] = 4,
-            ["Guildhests"] = 8,
-            ["Trials"] = 16,
-            ["Raids"] = 32,
-            ["PvP"] = 128,
-            ["Eureka"] = 16384,
-            ["V&C Dungeon Finder"] = 32768,
+            ["Dungeons"] = 4, ["Guildhests"] = 8, ["Trials"] = 16, ["Raids"] = 32, ["PvP"] = 128, ["Eureka"] = 16384, ["V&C Dungeon Finder"] = 32768,
         };
 
         var type = condition.ContentType;
@@ -284,7 +264,7 @@ public unsafe class RecruitmentDataController : IDisposable
 
         if(category == SelectedCategory.Pvp && condition.Name.RawString.Contains("Crystalline Conflict"))
             return CategoryTab.CustomMatch;
-        if(category == SelectedCategory.Raids && isAllianceRaid(condition))
+        if(category == SelectedCategory.Raids && isAllianceContent(condition))
             return CategoryTab.Alliance;
         if(category == SelectedCategory.FieldOperations && categoryTab == CategoryTab.Alliance)
             return CategoryTab.Alliance;
@@ -292,7 +272,7 @@ public unsafe class RecruitmentDataController : IDisposable
         return CategoryTab.Normal;
     }
 
-    public static bool isAllianceRaid(ContentFinderCondition condition) {
+    public static bool isAllianceContent(ContentFinderCondition condition) {
         var territoryTypeSheet = Services.DataManager.GetExcelSheet<TerritoryType>()!.Where(r => r.ContentFinderCondition.Equals(condition));
         var intendedUse = territoryTypeSheet.First().TerritoryIntendedUse;
         return intendedUse == 8 || intendedUse == 52 || intendedUse == 53;
@@ -305,4 +285,13 @@ public unsafe class RecruitmentDataController : IDisposable
         Array.Copy(slots, partyIndex+1, slots, partyIndex, shiftLength);
         slots[(currentParty + 1) * 8 - 1] = temp;
     }
+
+    // Debug
+    public void SaveNewPresetAndPrint(string Name) {
+        var x = new RecruitmentData(Name);
+        RecruitmentPresets.Add(x);
+        this.Save();
+        x.PrintData();
+    }
+
 }

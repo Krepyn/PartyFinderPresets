@@ -1,15 +1,11 @@
 using System;
 using System.Numerics;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using System.IO;
 using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Dalamud.Interface.Utility.Raii;
 using static Dalamud.Interface.Utility.Raii.ImRaii;
-using static FFXIVClientStructs.FFXIV.Client.UI.RaptureAtkHistory.Delegates;
-using Dalamud.Interface;
 using PartyFinderPresets.Controllers;
 
 namespace PartyFinderPresets.Windows;
@@ -24,7 +20,7 @@ public sealed class MainWindow : Window, IDisposable
     private bool deleteConfirm;
 
     public MainWindow(Plugin plugin)
-        : base("Presets##PFPDockWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking)
+        : base("Presets##PFPDock", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking)
     {
         this.Plugin = plugin;
         this.RecruitmentDataController = plugin.RecruitmentDataController;
@@ -56,8 +52,6 @@ public sealed class MainWindow : Window, IDisposable
         windowPos = new Vector2(positionX + sizeW * scale.X + 7, positionY + 7);
 
         if (isCollapsed) ImGui.SetNextWindowPos(windowPos, ImGuiCond.Always);
-
-        //get first frame
     }
 
     public override Boolean DrawConditions()
@@ -72,7 +66,6 @@ public sealed class MainWindow : Window, IDisposable
         // Code for auto resize
         //     ImGui.SetNextWindowSizeConstraints(new Vector2(300f, ImGui.GetTextLineHeightWithSpacing() * 1), new Vector2(300f, ImGui.GetTextLineHeightWithSpacing() * 5));
         //     Inside child => new Vector2(300.0f * ImGuiHelpers.GlobalScale, Plugin.RecruitmentDataController.GetPresetCount() * ImGui.GetFrameHeightWithSpacing() + ImGui.GetFrameHeight())
-
 
         DrawPresetList();
 
@@ -163,6 +156,7 @@ public sealed class MainWindow : Window, IDisposable
         child.Dispose();
     }
 
+    // TODO Carry Buttons here
     public void DrawButtons()
     {
         return;

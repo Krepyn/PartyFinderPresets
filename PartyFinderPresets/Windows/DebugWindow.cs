@@ -1,33 +1,14 @@
 using System;
 using System.Numerics;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using PartyFinderPresets.Controllers;
-using PartyFinderPresets.Classes;
-using Newtonsoft.Json;
-using System.IO;
-using Newtonsoft.Json.Converters;
-using System.Xml.Linq;
-using System.Linq;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.ComponentModel;
-using System.Reflection.Metadata.Ecma335;
 using PartyFinderPresets.Structs;
 using PartyFinderPresets.Utils;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.ImGuiSeStringRenderer;
-using Dalamud.Interface;
-using static Lumina.Data.Parsing.Uld.NodeData;
 using System.Runtime.InteropServices;
-using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Dalamud.Memory;
-using System.Security.Cryptography;
 
 namespace PartyFinderPresets.Windows;
 
@@ -67,13 +48,7 @@ public unsafe sealed class DebugWindow : Window, IDisposable
         {
             Plugin.RecruitmentDataController.Load();
         }
-        if(ImGui.Button("partyleadercontentid")) {
-            var partyLeaderId = Plugin.GameFunctions.GetPartyLeaderContentID();
-            Services.PluginLog.Verbose($"{partyLeaderId:X}");
-        }
-        if(ImGui.Button("setstring")) {
-            Plugin.GameFunctions.SendString();
-        }
+
         var x = SelectedCategory.VandCDungeonFinder;        
         ImGui.Text($"{Helpers.GapsBeforeCapitals(x.ToString(), true)}");
 
@@ -153,12 +128,12 @@ public unsafe sealed class DebugWindow : Window, IDisposable
         }
         if (ImGui.Button("AvgItemLv On"))
         {
-            this.Plugin.GameFunctions.AvgItemLvOn();
+            this.Plugin.GameFunctions.AvgItemLv(true);
         }
         
         if (ImGui.Button("AvgItemLv Off"))
         {
-            this.Plugin.GameFunctions.AvgItemLvOff();
+            this.Plugin.GameFunctions.AvgItemLv(false);
         }
 
         if (AtkValues != null)
@@ -179,7 +154,6 @@ public unsafe sealed class DebugWindow : Window, IDisposable
             }
         }
 
-        //// OMGGGGGGGGGGGGGGGGGGGGGG
         if (ImGui.Button("Refresh Test"))
         {
             var baseResNode = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition")->GetNodeById(18);
@@ -199,7 +173,7 @@ public unsafe sealed class DebugWindow : Window, IDisposable
             Services.PluginLog.Verbose($"refreshed");
         }
 
-        if(ImGui.Button("pr'nt str")) {
+        if(ImGui.Button("print str")) {
             var baseResNode = RaptureAtkUnitManager.Instance()->GetAddonByName("LookingForGroupCondition")->GetNodeById(18);
             var componentNode = (AtkComponentTextInput*)baseResNode->ChildNode->GetComponent();
             var textNode = componentNode->AtkTextNode->GetAsAtkTextNode();

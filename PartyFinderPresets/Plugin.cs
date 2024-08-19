@@ -20,7 +20,6 @@ public sealed class Plugin : IDalamudPlugin
     public readonly DebugWindow DebugWindow;
 #endif
 
-
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
         Services.Init(pluginInterface);
@@ -50,6 +49,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         Commands.Dispose();
         GameFunctions.Dispose();
+        RecruitmentDataController.Dispose();
 
         WindowSystem.RemoveAllWindows();
         ConfigWindow.Dispose();
