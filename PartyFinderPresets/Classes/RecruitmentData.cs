@@ -17,8 +17,8 @@ public class RecruitmentData
     [JsonProperty(Order = -2)]
     public string Name { get; set; } = "Preset";
     public string Password = null!; // Not enabled is 10000, no password set is 0
-    public string _comment = null!;  // array size 192 long
-    public byte[] _seStrComment = new byte[196];
+    public string Comment = null!;  // array size 192 long
+    public byte[] SeStrComment = new byte[196];
 
 
     public bool AvgItemLvEnabled;
@@ -39,7 +39,7 @@ public class RecruitmentData
     public LootRule LootRule;
     public CategoryTab CategoryTab;
 
-    public JobFlags[] _slotFlags = new JobFlags[48];
+    public JobFlags[] SlotFlags = new JobFlags[48];
     public Language LanguageFlags;
 
     public RecruitmentData() {
@@ -56,9 +56,9 @@ public class RecruitmentData
         this.Name = Name;
 
         this.Password = current.Password->ToString("D4");
-        this._comment = SeString.Parse(current._comment, 196).ToString();
-        this._seStrComment = new byte[196];
-        Marshal.Copy((IntPtr)current._comment, this._seStrComment, 0, 196);
+        this.Comment = SeString.Parse(current.Comment, 196).ToString();
+        this.SeStrComment = new byte[196];
+        Marshal.Copy((IntPtr)current.Comment, this.SeStrComment, 0, 196);
 
         this.AvgItemLvEnabled = *current.AvgItemLvEnabled == 1;
         this.BeginnerFriendly = *current.BeginnerFriendly == 1;
@@ -77,7 +77,7 @@ public class RecruitmentData
         this.CompletionStatus = *current.CompletionStatus;
         this.DutyFinderSettingFlags = *current.DutyFinderSettingFlags;
 
-        this._slotFlags = SlotFlagsPointerToArray((IntPtr) current._slotFlags, this.NumberOfGroups);
+        this.SlotFlags = SlotFlagsPointerToArray((IntPtr) current.SlotFlags, this.NumberOfGroups);
         this.LanguageFlags = *current.LanguageFlags;
     }
 
@@ -88,7 +88,7 @@ public class RecruitmentData
         Marshal.Copy(source: currentFlags, slotFlagsL, startIndex: 0, length: 48);
 
         // Marshal doesnt copy unsigned longs, so have to reassign (or I couldn't do it)
-        for (int i = 0; i<NumberOfGroups*8; i++)
+        for (var i = 0; i<NumberOfGroups*8; i++)
         {
             slotFlags[i] = (JobFlags) ((ulong)slotFlagsL[i]);
         }
@@ -126,14 +126,14 @@ public class RecruitmentData
         if (Password == "10000") Services.PluginLog.Verbose($"Password: None");
         else Services.PluginLog.Verbose($"Password: {Password}");
         Services.PluginLog.Verbose($"Password: {LanguageFlags}");
-        Services.PluginLog.Verbose($"Second Slot Allowed Classes: {_slotFlags[1]}");
-        Services.PluginLog.Verbose($"Third Slot Allowed Classes: {_slotFlags[2]}");
-        Services.PluginLog.Verbose($"Fourth Slot Allowed Classes: {_slotFlags[4]}");
-        Services.PluginLog.Verbose($"Fifth Slot Allowed Classes: {_slotFlags[5]}");
-        Services.PluginLog.Verbose($"Sixth Slot Allowed Classes: {_slotFlags[6]}");
-        Services.PluginLog.Verbose($"Seventh Slot Allowed Classes: {_slotFlags[7]}");
-        Services.PluginLog.Verbose($"Eight Slot Allowed Classes: {_slotFlags[8]}");
-        Services.PluginLog.Verbose($"Comment: {_comment}");
+        Services.PluginLog.Verbose($"Second Slot Allowed Classes: {SlotFlags[1]}");
+        Services.PluginLog.Verbose($"Third Slot Allowed Classes: {SlotFlags[2]}");
+        Services.PluginLog.Verbose($"Fourth Slot Allowed Classes: {SlotFlags[4]}");
+        Services.PluginLog.Verbose($"Fifth Slot Allowed Classes: {SlotFlags[5]}");
+        Services.PluginLog.Verbose($"Sixth Slot Allowed Classes: {SlotFlags[6]}");
+        Services.PluginLog.Verbose($"Seventh Slot Allowed Classes: {SlotFlags[7]}");
+        Services.PluginLog.Verbose($"Eight Slot Allowed Classes: {SlotFlags[8]}");
+        Services.PluginLog.Verbose($"Comment: {Comment}");
         Services.PluginLog.Verbose($"----");        
     }
 }

@@ -34,8 +34,8 @@ public unsafe class RecruitmentSub
     public byte* OnePlayerPerJob;
     public byte* NumberOfGroups; // 1 Normal, 3 Alliances, 6 Field Operations
 
-    public ulong* _slotFlags; // array size 48
-    public byte* _comment;  // array size 192
+    public ulong* SlotFlags; // array size 48
+    public byte* Comment;  // array size 192
 
     public CategoryTab* CategoryTab;
 
@@ -57,9 +57,8 @@ public unsafe class RecruitmentSub
         ["LimitRecruitingToWorld"] = 0x26,
         ["OnePlayerPerJob"] = 0x27,
         ["NumberOfGroups"] = 0x28,
-        ["_memberContentIds"] = 0x30,
-        ["_slotFlags"] = 0x1B0,
-        ["_comment"] = 0x330,
+        ["SlotFlags"] = 0x1B0,
+        ["Comment"] = 0x330,
         ["AvgItemLv"] = 0x14E4,
         ["AvgItemLvEnabled"] = 0x14E6,
         ["CategoryTab"] = 0x3104,
@@ -85,8 +84,8 @@ public unsafe class RecruitmentSub
         LimitRecruitingToWorld = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["LimitRecruitingToWorld"];
         OnePlayerPerJob = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["OnePlayerPerJob"];
         NumberOfGroups = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["NumberOfGroups"];
-        _slotFlags = (ulong*)((byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["_slotFlags"]);
-        _comment = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["_comment"];
+        SlotFlags = (ulong*)((byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["SlotFlags"]);
+        Comment = (byte*)LookingForGroupAgent + SUBSTRUCT_OFFSET + dataOffsets["Comment"];
         CategoryTab = (CategoryTab*) (byte*)LookingForGroupAgent + dataOffsets["CategoryTab"];
     }
     public static RecruitmentSub GetCurrentData()

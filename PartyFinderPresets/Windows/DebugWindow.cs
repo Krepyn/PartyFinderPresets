@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 
 namespace PartyFinderPresets.Windows;
 
-public unsafe sealed class DebugWindow : Window, IDisposable
+public sealed unsafe class DebugWindow : Window, IDisposable
 {
     private readonly Plugin Plugin;
     public AtkValue[] AtkValues = null!;
@@ -38,7 +38,7 @@ public unsafe sealed class DebugWindow : Window, IDisposable
         Marshal.FreeHGlobal((nint)testStr);
     }
 
-    public unsafe override void Draw()
+    public override void Draw()
     {
         if (ImGui.Button("Save Preset Library"))
         {
@@ -49,16 +49,18 @@ public unsafe sealed class DebugWindow : Window, IDisposable
             Plugin.RecruitmentDataController.Load();
         }
 
-        var x = SelectedCategory.VandCDungeonFinder;        
+        var x = SelectedCategory.VandCDungeonFinder;
         ImGui.Text($"{Helpers.GapsBeforeCapitals(x.ToString(), true)}");
 
+#pragma warning disable RCS1257 // Use enum field explicitly || This is for testing
         x = (SelectedCategory)2;
         ImGui.Text($"{Enum.IsDefined(typeof(SelectedCategory), x)}");
+#pragma warning restore RCS1257 // Use enum field explicitly
 
-        ImGui.InputText($"##longtoulong", ref longValueS, 128);
+        ImGui.InputText("##longtoulong", ref longValueS, 128);
         longValue = long.Parse(longValueS);
         ImGui.SameLine();
-        ImGui.Text($" | ");
+        ImGui.Text(" | ");
         ImGui.SameLine();
         ImGui.Text($"{(ulong)longValue}");
 
@@ -94,7 +96,7 @@ public unsafe sealed class DebugWindow : Window, IDisposable
         //        var seString3 = ImGuiHelpers.CompileSeStringWrapped(stringa2, seStringDrawParams);
         //        ImGui.PopFont();
 
-        ImGui.InputText($"##savepreset", ref presetName, 128);
+        ImGui.InputText("##savepreset", ref presetName, 128);
         ImGui.SameLine();
         if (ImGui.Button("Save Preset"))
         {
@@ -118,6 +120,9 @@ public unsafe sealed class DebugWindow : Window, IDisposable
         {
             this.Plugin.GameFunctions.RCRefresh(0, 0);
         }
+        if(ImGui.Button("RC Refresh #params (0,1)")) {
+            this.Plugin.GameFunctions.RCRefresh(0, 1);
+        }
         if (ImGui.Button("Toggle Recruitment Update Hook"))
         {
             this.Plugin.GameFunctions.ToggleUpdateHook();
@@ -130,7 +135,7 @@ public unsafe sealed class DebugWindow : Window, IDisposable
         {
             this.Plugin.GameFunctions.AvgItemLv(true);
         }
-        
+
         if (ImGui.Button("AvgItemLv Off"))
         {
             this.Plugin.GameFunctions.AvgItemLv(false);
@@ -143,7 +148,6 @@ public unsafe sealed class DebugWindow : Window, IDisposable
                 ImGui.TableSetupColumn("Func", ImGuiTableColumnFlags.WidthFixed, 40);
                 ImGui.TableSetupColumn("Int", ImGuiTableColumnFlags.WidthFixed, 100);
                 ImGui.TableSetupColumn("Bool", ImGuiTableColumnFlags.WidthFixed, 40);
-
 
                 ImGui.TableNextColumn();
                 ImGui.Text($"{AtkValues[0].Int}");
@@ -161,16 +165,16 @@ public unsafe sealed class DebugWindow : Window, IDisposable
             var textNode = componentNode->AtkTextNode->GetAsAtkTextNode();
             var textNodeStr = textNode->NodeText;
 
-            SeStringBuilder seStringB = new SeStringBuilder();
+            var seStringB = new SeStringBuilder();
             seStringB.AddText("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-            SeString seString = seStringB.BuiltString;
-            byte[] bytes = seString.EncodeWithNullTerminator();
+            var seString = seStringB.BuiltString;
+            var bytes = seString.EncodeWithNullTerminator();
 
             testStr = Marshal.AllocHGlobal(bytes.Length);
             Marshal.Copy(bytes, 0, testStr, bytes.Length);
             componentNode->SetText((byte*)testStr);
 
-            Services.PluginLog.Verbose($"refreshed");
+            Services.PluginLog.Verbose("refreshed");
         }
 
         if(ImGui.Button("print str")) {
@@ -181,6 +185,5 @@ public unsafe sealed class DebugWindow : Window, IDisposable
 
             Services.PluginLog.Verbose($"{textNodeStr}");
         }
-
     }
 }

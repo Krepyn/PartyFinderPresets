@@ -9,9 +9,10 @@ namespace PartyFinderPresets
         private Plugin Plugin;
         private static readonly Dictionary<string, string> CommandNames = new()
         {
-            ["/pftc"] = "Toggles the Config",
+            ["/pfpc"] = "Toggles the Config",
+            ["/pfpm"] = "Toggles Preset Menu",
 #if DEBUG
-            ["/pftd"] = "Debug UI"
+            ["/pfpd"] = "Debug UI"
 #endif
         };
 
@@ -29,10 +30,12 @@ namespace PartyFinderPresets
         {
             Services.PluginLog.Verbose($"Received Command: {command}, Args: {args}");
 
-            if (command.Equals("/pftc"))
+            if(command.Equals("/pfpc"))
                 this.Plugin.ConfigWindow.Toggle();
+            else if(command.Equals("/pfpm"))
+                Plugin.Configuration.PresetsDockVisible = !Plugin.Configuration.PresetsDockVisible;
 #if DEBUG
-            else if (command.Equals("/pftd"))
+            else if(command.Equals("/pfpd"))
                 this.Plugin.DebugWindow.Toggle();
 #endif
         }

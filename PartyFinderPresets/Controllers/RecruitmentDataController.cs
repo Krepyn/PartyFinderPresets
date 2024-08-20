@@ -19,10 +19,10 @@ public unsafe class RecruitmentDataController : IDisposable
     public Plugin Plugin;
     public List<RecruitmentData> RecruitmentPresets = [];
     public RecruitmentSub CurrentData;
-    private readonly string FileName = Path.Combine(Services.PluginInterface.ConfigDirectory.FullName, "PresetsLibrary.json");
+    private readonly string fileName = Path.Combine(Services.PluginInterface.ConfigDirectory.FullName, "PresetsLibrary.json");
     private nint testStr;
 
-    public RecruitmentDataController(Plugin plugin) { 
+    public RecruitmentDataController(Plugin plugin) {
         this.Plugin = plugin;
         this.CurrentData = new RecruitmentSub();
         testStr = Marshal.AllocHGlobal(196);
@@ -35,21 +35,21 @@ public unsafe class RecruitmentDataController : IDisposable
     }
 
     public void Load() {
-        if (!File.Exists(FileName)) {
+        if (!File.Exists(fileName)) {
             Services.PluginLog.Verbose("Couln't find presets json.");
             return;
         } try {
-            RecruitmentPresets = JsonConvert.DeserializeObject<List<RecruitmentData>>(File.ReadAllText(FileName))!;
+            RecruitmentPresets = JsonConvert.DeserializeObject<List<RecruitmentData>>(File.ReadAllText(fileName))!;
         } catch(JsonReaderException e) {
             Services.PluginLog.Error($"Couldn't read presets json, {e}.");
         }
 
-        if(RecruitmentPresets == null) RecruitmentPresets = [];
+        RecruitmentPresets ??= [];
     }
 
-    public void Save() {        
+    public void Save() {
         if(RecruitmentPresets == null) return;
-        File.WriteAllText(FileName, JsonConvert.SerializeObject(RecruitmentPresets, Formatting.Indented, [new StringEnumConverter()]));
+        File.WriteAllText(fileName, JsonConvert.SerializeObject(RecruitmentPresets, Formatting.Indented, [new StringEnumConverter()]));
         Services.PluginLog.Verbose("PresetLibrary Saved.");
         //File.WriteAllText(FileName, JsonConvert.SerializeObject(RecruitmentPresets, Formatting.Indented));
     }
@@ -70,18 +70,24 @@ public unsafe class RecruitmentDataController : IDisposable
         this.Save();
     }
 
+    public void UpdatePreset(int index) {
+        var preset = RecruitmentPresets[index];
+        preset.MakePresetFromCurrentData(preset.Name);
+        this.Save();
+    }
+
     public int GetPresetCount() {
         if (RecruitmentPresets == null) return 0;
         return RecruitmentPresets.Count;
     }
 
-    public unsafe void LoadPreset(int index) {
+    public void LoadPreset(int index) {
         var listToLoad = RecruitmentPresets[index];
 
         *CurrentData.AvgItemLvEnabled = (byte)(listToLoad.AvgItemLvEnabled ? 1 : 0);
         if(listToLoad.AvgItemLvEnabled)
             *CurrentData.AvgItemLv = listToLoad.AvgItemLv;
-                
+
         var selectedCategory = listToLoad.SelectedCategory;
         var selectedDutyId = listToLoad.SelectedDutyId;
         var categoryTab = listToLoad.CategoryTab;
@@ -121,7 +127,7 @@ public unsafe class RecruitmentDataController : IDisposable
         *CurrentData.OnePlayerPerJob = (byte)(listToLoad.OnePlayerPerJob ? 1 : 0);
 
         // TODO add slot shifting depending on current party members
-        var slotFlags = listToLoad._slotFlags;
+        var slotFlags = listToLoad.SlotFlags;
         var numberOfGroups = (listToLoad.NumberOfGroups <= 6 && listToLoad.NumberOfGroups > 0) ? listToLoad.NumberOfGroups : 1;
         for(var i = 1; i < 8 * numberOfGroups; i++) {
             if((ulong)slotFlags[i] % 2 == 1) slotFlags[i]--;
@@ -130,17 +136,17 @@ public unsafe class RecruitmentDataController : IDisposable
                 slotFlags[i] = 0;
             }
             if((ulong) slotFlags[i] == 0) shiftSlotsInCurrentParty(ref slotFlags, i);
-            CurrentData._slotFlags[i] = (ulong)slotFlags[i];
+            CurrentData.SlotFlags[i] = (ulong)slotFlags[i];
             Services.PluginLog.Verbose($"Slot {i+1} has been loaded.");
         }
 
-        var commentString = listToLoad._seStrComment;
+        var commentString = listToLoad.SeStrComment;
         var valid = isCommentValid(commentString);
         Services.PluginLog.Info($"{valid}");
         if(valid)
-            Marshal.Copy(commentString, 0, (nint)CurrentData._comment, 196);
+            Marshal.Copy(commentString, 0, (nint)CurrentData.Comment, 196);
         else
-            Services.PluginLog.Info($"Comment is longer than it is allowed.");
+            Services.PluginLog.Info("Comment is longer than it is allowed.");
 
         this.Plugin.GameFunctions.RCRefresh(0, 0);
 
@@ -162,7 +168,7 @@ public unsafe class RecruitmentDataController : IDisposable
         Services.PluginLog.Info($"{aa.ToString()} .");
         textNode->SetText((byte*)testStr);
         var bb = textNode->NodeText.ToString().Replace("\u0002\u0010\u0001\u0003", "");
-        Services.PluginLog.Info($"{bb} .");
+        Services.PluginLog.Info($"{bb.ToString()} .");
 
         return aa.ToString() == bb;
 
@@ -180,16 +186,16 @@ public unsafe class RecruitmentDataController : IDisposable
 
     public static bool DutyIdIsValid(ref SelectedCategory selectedCategory, ref CategoryTab categoryTab, ushort dutyId) {
         if(!Enum.IsDefined(typeof(SelectedCategory), selectedCategory)) {
-            Services.PluginLog.Verbose($"Selected Category was wrong. ({((ushort)selectedCategory)})");
+            Services.PluginLog.Verbose($"Selected Category was wrong. ({(ushort)selectedCategory})");
             return false;
         }
-        
+
         if(selectedCategory == SelectedCategory.None)
             return true;
 
         SelectedCategory[] LuminaDuties = [SelectedCategory.Dungeons, SelectedCategory.Guildhests, SelectedCategory.Trials, SelectedCategory.Raids,
                                            SelectedCategory.HighendDuty, SelectedCategory.Pvp, SelectedCategory.FieldOperations, SelectedCategory.VandCDungeonFinder];
-        
+
         if(LuminaDuties.Contains<SelectedCategory>(selectedCategory)) {
             var duty = findCondition(dutyId);
             if(duty == null) return false;
@@ -224,11 +230,11 @@ public unsafe class RecruitmentDataController : IDisposable
             return Enum.IsDefined(typeof(GatheringForayType), dutyId);
         }
 
-        Services.PluginLog.Verbose($"Selected Category was wrong. ({((ushort)selectedCategory)})");
+        Services.PluginLog.Verbose($"Selected Category was wrong. ({(ushort)selectedCategory})");
         return false;
     }
 
-    public static ContentFinderCondition? findCondition(ushort dutyId) {        
+    public static ContentFinderCondition? findCondition(ushort dutyId) {
         return Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(row: dutyId);
     }
 
@@ -261,7 +267,6 @@ public unsafe class RecruitmentDataController : IDisposable
     }
 
     public static CategoryTab findDutyCategoryTab(ContentFinderCondition condition, SelectedCategory category, CategoryTab categoryTab) {
-
         if(category == SelectedCategory.Pvp && condition.Name.RawString.Contains("Crystalline Conflict"))
             return CategoryTab.CustomMatch;
         if(category == SelectedCategory.Raids && isAllianceContent(condition))
@@ -281,9 +286,9 @@ public unsafe class RecruitmentDataController : IDisposable
     public static void shiftSlotsInCurrentParty(ref JobFlags[] slots, int partyIndex) {
         var currentParty = partyIndex / 8;
         var temp = slots[partyIndex];
-        var shiftLength = 8 * (currentParty + 1) - partyIndex - 1;
+        var shiftLength = (8 * (currentParty + 1)) - partyIndex - 1;
         Array.Copy(slots, partyIndex+1, slots, partyIndex, shiftLength);
-        slots[(currentParty + 1) * 8 - 1] = temp;
+        slots[((currentParty + 1) * 8) - 1] = temp;
     }
 
     // Debug
@@ -293,5 +298,4 @@ public unsafe class RecruitmentDataController : IDisposable
         this.Save();
         x.PrintData();
     }
-
 }
