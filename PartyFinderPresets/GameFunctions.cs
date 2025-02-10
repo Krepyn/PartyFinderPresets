@@ -17,7 +17,7 @@ public sealed unsafe class GameFunctions : IDisposable
 
     // For changing fields through a function
     // Param2 Array of AtkValues, 3 values max(?) -> [0] is operation id, [1] & [2] is needed data
-    private delegate void RCUpdateValuesDelegate(AgentLookingForGroup* param1, AtkValue* param2);
+    private delegate void RCUpdateValuesDelegate(AgentLookingForGroup* param1, AtkValue* param2);   
     [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9")]
     private readonly RCUpdateValuesDelegate? _updateValues;
     [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9", DetourName = nameof(RCUpdateValuesHook))]
@@ -27,9 +27,10 @@ public sealed unsafe class GameFunctions : IDisposable
     // param1: Current Recruitment Status => 0 = Currently Not Recruiting, 1 = Currently Recruiting
     // param2: Unknown => 0 or 1, dunno what it does??
     private delegate void RCRefreshDelegate(AgentLookingForGroup* param1, ulong param2, char param3);
-    [Signature("E8 ?? ?? ?? ?? 4D 89 BE ?? ?? ?? ?? 4D 89 BE")]
+    //Old Sig 7.05 -> [Signature("E8 ?? ?? ?? ?? 4D 89 BE ?? ?? ?? ?? 4D 89 BE")] 
+    [Signature("E8 ?? ?? ?? ?? 4D 89 A7 ?? ?? ?? ?? 4D 89 A7")]
     private readonly RCRefreshDelegate? _addonRefresh;
-    [Signature("E8 ?? ?? ?? ?? 4D 89 BE ?? ?? ?? ?? 4D 89 BE", DetourName = nameof(RCRefreshHook))]
+    [Signature("E8 ?? ?? ?? ?? 4D 89 A7 ?? ?? ?? ?? 4D 89 A7", DetourName = nameof(RCRefreshHook))]
     private readonly Hook<RCRefreshDelegate>? _addonRefreshHook;
 
     public GameFunctions(Plugin Plugin)
@@ -61,6 +62,7 @@ public sealed unsafe class GameFunctions : IDisposable
 
     private void RCRefreshHook(AgentLookingForGroup* param1, ulong param2, char param3)
     {
+            Services.PluginLog.Verbose("Ping.");
         try {
             Services.PluginLog.Verbose($"Recruitment Criteria Opened: {param2}, {(int)param3}");
             LastRefreshCondition = (int)param2;

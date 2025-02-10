@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
-
+<Project Sdk="Dalamud.NET.SDK/11.0.0">
   <PropertyGroup>
     <Version>0.0.0.1</Version>
     <Description>A sample plugin.</Description>
@@ -22,5 +20,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="DotNet.ReproducibleBuilds" Version="1.2.25" />
   </ItemGroup>
 </Project>

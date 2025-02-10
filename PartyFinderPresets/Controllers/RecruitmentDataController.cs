@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json.Converters;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -56,7 +56,6 @@ public unsafe class RecruitmentDataController : IDisposable
 
     public RecruitmentData? GetPreset(int index) {
         if (RecruitmentPresets.Count == 0) return null;
-        if (RecruitmentPresets[index] == null) return null;
         return RecruitmentPresets[index];
     }
 
@@ -199,10 +198,10 @@ public unsafe class RecruitmentDataController : IDisposable
         if(LuminaDuties.Contains<SelectedCategory>(selectedCategory)) {
             var duty = findCondition(dutyId);
             if(duty == null) return false;
-            selectedCategory = findDutyCategory(duty);
+            selectedCategory = findDutyCategory((ContentFinderCondition)duty);
             categoryTab = CategoryTab.Normal;
             if(selectedCategory == SelectedCategory.Raids || selectedCategory == SelectedCategory.Pvp || selectedCategory == SelectedCategory.FieldOperations)
-                categoryTab = findDutyCategoryTab(duty, selectedCategory, categoryTab);
+                categoryTab = findDutyCategoryTab((ContentFinderCondition)duty, selectedCategory, categoryTab);
             return true;
         }
 
@@ -235,12 +234,12 @@ public unsafe class RecruitmentDataController : IDisposable
     }
 
     public static ContentFinderCondition? findCondition(ushort dutyId) {
-        return Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(row: dutyId);
+        return Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(dutyId);
     }
 
     public static bool validFateTerritoryType(uint id) {
-        var territoryTypeSheet = Services.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(row: id);
-        if(territoryTypeSheet!.TerritoryIntendedUse == 1 && !territoryTypeSheet!.IsPvpZone)
+        var territoryTypeSheet = Services.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(id);
+        if(territoryTypeSheet!.TerritoryIntendedUse.RowId == 1 && !territoryTypeSheet!.IsPvpZone)
             return true;
 
         return false;
@@ -259,15 +258,15 @@ public unsafe class RecruitmentDataController : IDisposable
 
         string[] fieldOperations = ["Zadnor", "Delubrum Reginae", "Delubrum Reginae (Savage)", "the Bozjan Southern Front"];
 
-        var name = condition.Name;
+        var name = condition.Name.ExtractText();
         if(fieldOperations.Contains(name)) // Field Operations
-            return SelectedCategory.FieldOperations;
+           return SelectedCategory.FieldOperations;
 
         return SelectedCategory.None;
     }
 
     public static CategoryTab findDutyCategoryTab(ContentFinderCondition condition, SelectedCategory category, CategoryTab categoryTab) {
-        if(category == SelectedCategory.Pvp && condition.Name.RawString.Contains("Crystalline Conflict"))
+        if(category == SelectedCategory.Pvp && condition.Name.ExtractText().Contains("Crystalline Conflict"))
             return CategoryTab.CustomMatch;
         if(category == SelectedCategory.Raids && isAllianceContent(condition))
             return CategoryTab.Alliance;
@@ -280,7 +279,7 @@ public unsafe class RecruitmentDataController : IDisposable
     public static bool isAllianceContent(ContentFinderCondition condition) {
         var territoryTypeSheet = Services.DataManager.GetExcelSheet<TerritoryType>()!.Where(r => r.ContentFinderCondition.Equals(condition));
         var intendedUse = territoryTypeSheet.First().TerritoryIntendedUse;
-        return intendedUse == 8 || intendedUse == 52 || intendedUse == 53;
+        return intendedUse.RowId == 8 || intendedUse.RowId == 52 || intendedUse.RowId == 53;
     }
 
     public static void shiftSlotsInCurrentParty(ref JobFlags[] slots, int partyIndex) {

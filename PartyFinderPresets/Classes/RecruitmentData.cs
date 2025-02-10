@@ -3,7 +3,7 @@ using PartyFinderPresets.Enums;
 using System;
 using System.Runtime.InteropServices;
 using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System.Linq;
 using Newtonsoft.Json;
 using Dalamud.Game.ClientState.JobGauge.Enums;
@@ -116,7 +116,7 @@ public class RecruitmentData
         Services.PluginLog.Verbose($"Selected Category Type: {SelectedCategory}");
         if (LuminaDuties.Contains<SelectedCategory>(SelectedCategory))
         {
-            var duty = Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(row: SelectedDutyId);
+            var duty = Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(SelectedDutyId);
             if (duty!.HighEndDuty == true) Services.PluginLog.Verbose($"Selected Duty Type: High-end Duty");
             else Services.PluginLog.Verbose($"Selected Duty Type: {duty!.ContentType.Value!.Name}");
             Services.PluginLog.Verbose($"Selected Duty Name: {duty!.Name}");
