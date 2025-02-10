@@ -5,8 +5,8 @@ using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using PartyFinderPresets.Structs;
 using PartyFinderPresets.Utils;
+using PartyFinderPresets.Enums;
 using Dalamud.Game.Text.SeStringHandling;
 using System.Runtime.InteropServices;
 
@@ -106,7 +106,7 @@ public sealed unsafe class DebugWindow : Window, IDisposable
 
         if (ImGui.Button("RecruitmentSub - Turn ilvl on"))
         {
-            *(Plugin.RecruitmentDataController.CurrentData.AvgItemLvEnabled) = 1;
+            Plugin.RecruitmentDataController.CurrentAgent->AvgItemLvEnabled = 1;
         }
 
         ImGui.Spacing();

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 using PartyFinderPresets.Classes;
-using PartyFinderPresets.Structs;
+//using PartyFinderPresets.Structs;
 using PartyFinderPresets.Enums;
 using System;
 using System.Collections.Generic;
@@ -11,20 +11,25 @@ using Newtonsoft.Json.Converters;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using PartyFinderPresets.Utils;
+using System.ComponentModel;
+using System.Reflection.Metadata.Ecma335;
 namespace PartyFinderPresets.Controllers;
 
 public unsafe class RecruitmentDataController : IDisposable
 {
     public Plugin Plugin;
     public List<RecruitmentData> RecruitmentPresets = [];
-    public RecruitmentSub CurrentData;
+    public AgentLookingForGroup.RecruitmentSub* CurrentData;
+    public AgentLookingForGroup* CurrentAgent;
     private readonly string fileName = Path.Combine(Services.PluginInterface.ConfigDirectory.FullName, "PresetsLibrary.json");
     private nint testStr;
 
     public RecruitmentDataController(Plugin plugin) {
         this.Plugin = plugin;
-        this.CurrentData = new RecruitmentSub();
+        CurrentAgent = AgentLookingForGroup.Instance();
+        CurrentData = &CurrentAgent->StoredRecruitmentInfo;
         testStr = Marshal.AllocHGlobal(196);
 
         Load();
@@ -83,51 +88,61 @@ public unsafe class RecruitmentDataController : IDisposable
     public void LoadPreset(int index) {
         var listToLoad = RecruitmentPresets[index];
 
-        *CurrentData.AvgItemLvEnabled = (byte)(listToLoad.AvgItemLvEnabled ? 1 : 0);
-        if(listToLoad.AvgItemLvEnabled)
-            *CurrentData.AvgItemLv = listToLoad.AvgItemLv;
-
-        var selectedCategory = listToLoad.SelectedCategory;
-        var selectedDutyId = listToLoad.SelectedDutyId;
         var categoryTab = listToLoad.CategoryTab;
-        if(DutyIdIsValid(ref selectedCategory, ref categoryTab, selectedDutyId)) {
-            *CurrentData.SelectedCategory = selectedCategory;
-            *CurrentData.SelectedDutyId = selectedDutyId;
-            *CurrentData.CategoryTab = categoryTab;
+        if(!(DutyIdIsValid(ref listToLoad.recruitmentSub.SelectedCategory, ref categoryTab, listToLoad.recruitmentSub.SelectedDutyId))) {
+            Services.PluginLog.Verbose("Error at duty ID");
+            return;
         }
 
-        var objective = listToLoad.Objective;
-        if(Enum.IsDefined(typeof(Objective), objective))
-            *CurrentData.Objective = objective;
+        var objective = listToLoad.recruitmentSub.Objective;
+        if(!(Enum.IsDefined(typeof(AgentLookingForGroup.Objective), objective))) {
+            Services.PluginLog.Verbose("Error at duty Objective");
+            return;
+        }
 
-        *CurrentData.BeginnerFriendly = (byte)(listToLoad.BeginnerFriendly ? 1 : 0);
+        var completionStatus = listToLoad.recruitmentSub.CompletionStatus;
+        if(!Enum.IsDefined(completionStatus) && (byte)completionStatus != 1) {
+            Services.PluginLog.Verbose($"Error at Completion Status, {completionStatus}");
+            return;
+        }
 
-        *CurrentData.LimitRecruitingToWorld = (byte)(listToLoad.LimitRecruitingToWorld ? 0 : 1);
+        var dutyFinderSettings = listToLoad.recruitmentSub.DutyFinderSettingFlags;
+        if(!(Enum.IsDefined(typeof(AgentLookingForGroup.DutyFinderSetting), dutyFinderSettings))) { // 00000111 
+            Services.PluginLog.Verbose("Error at duty finder settings");
+            return; 
+        }
 
-        var completionStatus = listToLoad.CompletionStatus;
-        if(Enum.IsDefined (typeof(CompletionStatus), completionStatus))
-            *CurrentData.CompletionStatus = completionStatus;
+        var lootRule = listToLoad.recruitmentSub.LootRule;
+        if(!Enum.IsDefined(lootRule)) // 00000010
+        {
+            Services.PluginLog.Verbose("Error at loot rule");
+            return;
+        }
 
-        var dutyFinderSettings = listToLoad.DutyFinderSettingFlags;
-        if((byte)dutyFinderSettings<=7) // 00000111 
-            *CurrentData.DutyFinderSettingFlags = dutyFinderSettings;
+        //var password = UInt16.Parse(listToLoad.Password);
+        var password = listToLoad.recruitmentSub.Password;
+        if(password > 10000 || password <0)
+        {
+            Services.PluginLog.Verbose("Error at password");
+            return;
+        }
 
-        var lootRule = listToLoad.LootRule;
-        if((byte)lootRule <=2) // 00000010
-            *CurrentData.LootRule = lootRule;
+        var language = listToLoad.recruitmentSub.LanguageFlags;
+        if((byte)language > 15) // 00001111
+        {
+            Services.PluginLog.Verbose("Error at language flags");
+            return;
+        }
 
-        var password = UInt16.Parse(listToLoad.Password);
-        *CurrentData.Password = password <= 10000 ? password : (ushort)10000;
-
-        var language = listToLoad.LanguageFlags;
-        if((byte)language <= 15) // 00001111
-            *CurrentData.LanguageFlags = language;
-
-        *CurrentData.OnePlayerPerJob = (byte)(listToLoad.OnePlayerPerJob ? 1 : 0);
+        CurrentAgent->AvgItemLvEnabled = listToLoad.AvgItemLvEnabled;
+        if(listToLoad.AvgItemLvEnabled == 1)
+            CurrentAgent->AvgItemLv = listToLoad.AvgItemLv;
+        CurrentAgent->GroupTypeTab = (byte)categoryTab;
+        Services.PluginLog.Verbose($"Current category tab {categoryTab}");
 
         // TODO add slot shifting depending on current party members
         var slotFlags = listToLoad.SlotFlags;
-        var numberOfGroups = (listToLoad.NumberOfGroups <= 6 && listToLoad.NumberOfGroups > 0) ? listToLoad.NumberOfGroups : 1;
+        var numberOfGroups = (listToLoad.recruitmentSub.NumberOfGroups <= 6 && listToLoad.recruitmentSub.NumberOfGroups > 0) ? listToLoad.recruitmentSub.NumberOfGroups : 1;
         for(var i = 1; i < 8 * numberOfGroups; i++) {
             if((ulong)slotFlags[i] % 2 == 1) slotFlags[i]--;
             if((ulong)slotFlags[i] > (ulong)0xFFFFFFFE) { // All roles
@@ -135,18 +150,19 @@ public unsafe class RecruitmentDataController : IDisposable
                 slotFlags[i] = 0;
             }
             if((ulong) slotFlags[i] == 0) shiftSlotsInCurrentParty(ref slotFlags, i);
-            CurrentData.SlotFlags[i] = (ulong)slotFlags[i];
+            (*CurrentData).SlotFlags[i] = (ulong)slotFlags[i];
             Services.PluginLog.Verbose($"Slot {i+1} has been loaded.");
         }
 
         var commentString = listToLoad.SeStrComment;
         var valid = isCommentValid(commentString);
         Services.PluginLog.Info($"{valid}");
-        if(valid)
-            Marshal.Copy(commentString, 0, (nint)CurrentData.Comment, 196);
-        else
-            Services.PluginLog.Info("Comment is longer than it is allowed.");
+        //if(valid)
+        //    Marshal.Copy(commentString, 0, (nint)(*CurrentData).Comment, 196);
+        //else
+        //    Services.PluginLog.Info("Comment is longer than it is allowed.");
 
+        *CurrentData = listToLoad.recruitmentSub;
         this.Plugin.GameFunctions.RCRefresh(0, 0);
 
         Services.PluginLog.Info($"Preset: {listToLoad.Name} has been loaded.");
@@ -183,53 +199,58 @@ public unsafe class RecruitmentDataController : IDisposable
         //    Services.PluginLog.Verbose($"Comment is bigger than it is allowed.");
     }
 
-    public static bool DutyIdIsValid(ref SelectedCategory selectedCategory, ref CategoryTab categoryTab, ushort dutyId) {
+    public static bool DutyIdIsValid(ref ushort selectedCategory, ref CategoryTab categoryTab, ushort dutyId) {
         if(!Enum.IsDefined(typeof(SelectedCategory), selectedCategory)) {
             Services.PluginLog.Verbose($"Selected Category was wrong. ({(ushort)selectedCategory})");
             return false;
         }
 
-        if(selectedCategory == SelectedCategory.None)
+        if((SelectedCategory)selectedCategory == SelectedCategory.None)
             return true;
 
         SelectedCategory[] LuminaDuties = [SelectedCategory.Dungeons, SelectedCategory.Guildhests, SelectedCategory.Trials, SelectedCategory.Raids,
                                            SelectedCategory.HighendDuty, SelectedCategory.Pvp, SelectedCategory.FieldOperations, SelectedCategory.VandCDungeonFinder];
 
-        if(LuminaDuties.Contains<SelectedCategory>(selectedCategory)) {
+        if(LuminaDuties.Contains<SelectedCategory>((SelectedCategory)selectedCategory)) {
             var duty = findCondition(dutyId);
             if(duty == null) return false;
-            selectedCategory = findDutyCategory((ContentFinderCondition)duty);
-            categoryTab = CategoryTab.Normal;
-            if(selectedCategory == SelectedCategory.Raids || selectedCategory == SelectedCategory.Pvp || selectedCategory == SelectedCategory.FieldOperations)
-                categoryTab = findDutyCategoryTab((ContentFinderCondition)duty, selectedCategory, categoryTab);
+            selectedCategory = (ushort)findDutyCategory((ContentFinderCondition)duty);
+            if(dutyId == 1010) { // Chaotic Cloud of Darkness(Id = 1010) can be queued as either Normal or Alliance soooo...
+                if(categoryTab == CategoryTab.CustomMatch)
+                    categoryTab = CategoryTab.Normal;
+            } else {
+                categoryTab = CategoryTab.Normal;
+            }
+            if((SelectedCategory)selectedCategory == SelectedCategory.Raids || (SelectedCategory)selectedCategory == SelectedCategory.Pvp || (SelectedCategory)selectedCategory == SelectedCategory.FieldOperations)
+                categoryTab = findDutyCategoryTab((ContentFinderCondition)duty, (SelectedCategory)selectedCategory, categoryTab);
             return true;
         }
 
-        if(selectedCategory == SelectedCategory.TreasureHunt)
+        if((SelectedCategory)selectedCategory == SelectedCategory.TreasureHunt)
             return dutyId <= 23;
 
-        if(selectedCategory == SelectedCategory.Fates) {
+        if((SelectedCategory)selectedCategory == SelectedCategory.Fates) {
             if(dutyId == 0) return true;
             else return validFateTerritoryType(dutyId);
         }
 
-        if(selectedCategory == SelectedCategory.TheHunt)
+        if((SelectedCategory)selectedCategory == SelectedCategory.TheHunt)
             return true;
 
-        if(selectedCategory == SelectedCategory.DeepDungeons)
+        if((SelectedCategory)selectedCategory == SelectedCategory.DeepDungeons)
             return dutyId > 0 && dutyId <= 3;
 
-        if(selectedCategory == SelectedCategory.DutyRoulette)
+        if((SelectedCategory)selectedCategory == SelectedCategory.DutyRoulette)
             return Enum.IsDefined(typeof(DutyRouletteType), dutyId);
 
-        if(selectedCategory == SelectedCategory.GoldSaucer)
+        if((SelectedCategory)selectedCategory == SelectedCategory.GoldSaucer)
             return Enum.IsDefined(typeof(GoldSaucerType), dutyId);
 
-        if(selectedCategory == SelectedCategory.GatheringForays) {
+        if((SelectedCategory)selectedCategory == SelectedCategory.GatheringForays) {
             return Enum.IsDefined(typeof(GatheringForayType), dutyId);
         }
 
-        Services.PluginLog.Verbose($"Selected Category was wrong. ({(ushort)selectedCategory})");
+        Services.PluginLog.Verbose($"Selected Category was wrong. ({selectedCategory})");
         return false;
     }
 
@@ -282,7 +303,7 @@ public unsafe class RecruitmentDataController : IDisposable
         return intendedUse.RowId == 8 || intendedUse.RowId == 52 || intendedUse.RowId == 53;
     }
 
-    public static void shiftSlotsInCurrentParty(ref JobFlags[] slots, int partyIndex) {
+    public static void shiftSlotsInCurrentParty(ref ulong[] slots, int partyIndex) {
         var currentParty = partyIndex / 8;
         var temp = slots[partyIndex];
         var shiftLength = (8 * (currentParty + 1)) - partyIndex - 1;
