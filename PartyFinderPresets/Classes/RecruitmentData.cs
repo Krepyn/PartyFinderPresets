@@ -17,22 +17,15 @@ public class RecruitmentData
     // Preset Related 
     [JsonProperty(Order = -2)]
     public string Name { get; set; } = "Preset";
-    public string Password = null!; // Not enabled is 10000, no password set is 0
     public string Comment = null!;  // array size 192 long
     public byte[] SeStrComment = new byte[196];
-    public AgentLookingForGroup.RecruitmentSub recruitmentSub;
-
 
     public byte AvgItemLvEnabled;
     public ushort AvgItemLv;
-
-    public CategoryTab CategoryTab;
-
     public ulong[] SlotFlags = new ulong[48];
 
-    public RecruitmentData() {
-        
-    }
+    public AgentLookingForGroup.RecruitmentSub recruitmentSub;
+    public CategoryTab CategoryTab;
 
     public RecruitmentData(string Name) {
         MakePresetFromCurrentData(Name);
@@ -41,9 +34,9 @@ public class RecruitmentData
     {
         var agentInstance = AgentLookingForGroup.Instance();
         var current = agentInstance->StoredRecruitmentInfo;
+        recruitmentSub = current;
 
         this.Name = Name;
-        recruitmentSub = current;
 
         //this.Comment = SeString.Parse(current.Comment, 196).ToString();
         this.Comment = SeString.Parse(current.Comment).ToString();
@@ -91,7 +84,8 @@ public class RecruitmentData
         Services.PluginLog.Verbose($"Preset Name: {Name}");
         Services.PluginLog.Verbose($"AvgItemLv: {AvgItemLv}");
         Services.PluginLog.Verbose($"AvgItemLvEnabled: {AvgItemLvEnabled}");
-        Services.PluginLog.Verbose($"Selected Category Type: {(SelectedCategory)recruitmentSub.SelectedCategory}");
+        Services.PluginLog.Verbose($"Category Tab: {CategoryTab}");
+        Services.PluginLog.Verbose($"Duty Type: {(SelectedCategory)recruitmentSub.SelectedCategory}");
         if (LuminaDuties.Contains<SelectedCategory>((SelectedCategory)recruitmentSub.SelectedCategory))
         {
             var duty = Services.DataManager.GetExcelSheet<ContentFinderCondition>()!.GetRow(recruitmentSub.SelectedDutyId);
@@ -101,16 +95,18 @@ public class RecruitmentData
         } else if ((SelectedCategory)recruitmentSub.SelectedCategory == SelectedCategory.DutyRoulette) {
 
         }
-        if (Password == "10000") Services.PluginLog.Verbose($"Password: None");
-        else Services.PluginLog.Verbose($"Password: {Password}");
-        Services.PluginLog.Verbose($"Password: {recruitmentSub.LanguageFlags}");
-        Services.PluginLog.Verbose($"Second Slot Allowed Classes: {SlotFlags[1]}");
-        Services.PluginLog.Verbose($"Third Slot Allowed Classes: {SlotFlags[2]}");
-        Services.PluginLog.Verbose($"Fourth Slot Allowed Classes: {SlotFlags[4]}");
-        Services.PluginLog.Verbose($"Fifth Slot Allowed Classes: {SlotFlags[5]}");
-        Services.PluginLog.Verbose($"Sixth Slot Allowed Classes: {SlotFlags[6]}");
-        Services.PluginLog.Verbose($"Seventh Slot Allowed Classes: {SlotFlags[7]}");
-        Services.PluginLog.Verbose($"Eight Slot Allowed Classes: {SlotFlags[8]}");
+
+        Services.PluginLog.Verbose($"Number of Groups: {recruitmentSub.NumberOfGroups}");
+        if (recruitmentSub.Password == 10000) Services.PluginLog.Verbose($"Password: None");
+        else Services.PluginLog.Verbose($"Password: {recruitmentSub.Password}");
+        Services.PluginLog.Verbose($"Languages: {recruitmentSub.LanguageFlags}");
+        Services.PluginLog.Verbose($"Second Slot Allowed Classes: {(JobFlags)SlotFlags[1]}");
+        Services.PluginLog.Verbose($"Third Slot Allowed Classes: {(JobFlags)SlotFlags[2]}");
+        Services.PluginLog.Verbose($"Fourth Slot Allowed Classes: {(JobFlags)SlotFlags[4]}");
+        Services.PluginLog.Verbose($"Fifth Slot Allowed Classes: {(JobFlags)SlotFlags[5]}");
+        Services.PluginLog.Verbose($"Sixth Slot Allowed Classes: {(JobFlags)SlotFlags[6]}");
+        Services.PluginLog.Verbose($"Seventh Slot Allowed Classes: {(JobFlags)SlotFlags[7]}");
+        Services.PluginLog.Verbose($"Eight Slot Allowed Classes: {(JobFlags)SlotFlags[8]}");
         Services.PluginLog.Verbose($"Comment: {Comment}");
         Services.PluginLog.Verbose($"----");        
     }

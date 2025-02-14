@@ -21,8 +21,8 @@ public unsafe class RecruitmentDataController : IDisposable
 {
     public Plugin Plugin;
     public List<RecruitmentData> RecruitmentPresets = [];
-    public AgentLookingForGroup.RecruitmentSub* CurrentData;
     public AgentLookingForGroup* CurrentAgent;
+    public AgentLookingForGroup.RecruitmentSub* CurrentData;
     private readonly string fileName = Path.Combine(Services.PluginInterface.ConfigDirectory.FullName, "PresetsLibrary.json");
     private nint testStr;
 
@@ -41,7 +41,7 @@ public unsafe class RecruitmentDataController : IDisposable
 
     public void Load() {
         if (!File.Exists(fileName)) {
-            Services.PluginLog.Verbose("Couln't find presets json.");
+            Services.PluginLog.Verbose("Couldn't find presets json.");
             return;
         } try {
             RecruitmentPresets = JsonConvert.DeserializeObject<List<RecruitmentData>>(File.ReadAllText(fileName))!;
@@ -80,39 +80,47 @@ public unsafe class RecruitmentDataController : IDisposable
         this.Save();
     }
 
+    public void RenamePreset(int index, string presetName) {
+        var preset = RecruitmentPresets[index];
+        preset.Name = presetName;
+        this.Save();
+    }
+
     public int GetPresetCount() {
         if (RecruitmentPresets == null) return 0;
         return RecruitmentPresets.Count;
     }
 
+    // TODO: Change preset save to default values if there is a problem with it and give a warning to the user
     public void LoadPreset(int index) {
-        var listToLoad = RecruitmentPresets[index];
+        var presetToLoad = RecruitmentPresets[index];
+        Services.PluginLog.Info($"--- Preset: \"{presetToLoad.Name}\" is loading. ---");
 
-        var categoryTab = listToLoad.CategoryTab;
-        if(!(DutyIdIsValid(ref listToLoad.recruitmentSub.SelectedCategory, ref categoryTab, listToLoad.recruitmentSub.SelectedDutyId))) {
+        var categoryTab = presetToLoad.CategoryTab;
+        if(!(DutyIdIsValid(ref presetToLoad.recruitmentSub.SelectedCategory, ref categoryTab, presetToLoad.recruitmentSub.SelectedDutyId))) {
             Services.PluginLog.Verbose("Error at duty ID");
             return;
         }
 
-        var objective = listToLoad.recruitmentSub.Objective;
-        if(!(Enum.IsDefined(typeof(AgentLookingForGroup.Objective), objective))) {
+        var objective = presetToLoad.recruitmentSub.Objective;
+        if(!(Enum.IsDefined(objective))) {
             Services.PluginLog.Verbose("Error at duty Objective");
             return;
         }
 
-        var completionStatus = listToLoad.recruitmentSub.CompletionStatus;
+        var completionStatus = presetToLoad.recruitmentSub.CompletionStatus;
         if(!Enum.IsDefined(completionStatus) && (byte)completionStatus != 1) {
             Services.PluginLog.Verbose($"Error at Completion Status, {completionStatus}");
             return;
         }
 
-        var dutyFinderSettings = listToLoad.recruitmentSub.DutyFinderSettingFlags;
+        var dutyFinderSettings = presetToLoad.recruitmentSub.DutyFinderSettingFlags;
         if(!(Enum.IsDefined(typeof(AgentLookingForGroup.DutyFinderSetting), dutyFinderSettings))) { // 00000111 
             Services.PluginLog.Verbose("Error at duty finder settings");
             return; 
         }
 
-        var lootRule = listToLoad.recruitmentSub.LootRule;
+        var lootRule = presetToLoad.recruitmentSub.LootRule;
         if(!Enum.IsDefined(lootRule)) // 00000010
         {
             Services.PluginLog.Verbose("Error at loot rule");
@@ -120,52 +128,51 @@ public unsafe class RecruitmentDataController : IDisposable
         }
 
         //var password = UInt16.Parse(listToLoad.Password);
-        var password = listToLoad.recruitmentSub.Password;
-        if(password > 10000 || password <0)
-        {
+        var password = presetToLoad.recruitmentSub.Password;
+        if(password > 10000) {
             Services.PluginLog.Verbose("Error at password");
             return;
         }
 
-        var language = listToLoad.recruitmentSub.LanguageFlags;
-        if((byte)language > 15) // 00001111
-        {
+        var language = presetToLoad.recruitmentSub.LanguageFlags;
+        if((byte)language > 15) { // 00001111
             Services.PluginLog.Verbose("Error at language flags");
             return;
         }
 
-        CurrentAgent->AvgItemLvEnabled = listToLoad.AvgItemLvEnabled;
-        if(listToLoad.AvgItemLvEnabled == 1)
-            CurrentAgent->AvgItemLv = listToLoad.AvgItemLv;
+        CurrentAgent->AvgItemLvEnabled = presetToLoad.AvgItemLvEnabled;
+        if(presetToLoad.AvgItemLvEnabled == 1)
+            CurrentAgent->AvgItemLv = presetToLoad.AvgItemLv;
         CurrentAgent->GroupTypeTab = (byte)categoryTab;
-        Services.PluginLog.Verbose($"Current category tab {categoryTab}");
+        // Services.PluginLog.Verbose($"Current category tab {categoryTab}");
+
+        *CurrentData = presetToLoad.recruitmentSub;
 
         // TODO add slot shifting depending on current party members
-        var slotFlags = listToLoad.SlotFlags;
-        var numberOfGroups = (listToLoad.recruitmentSub.NumberOfGroups <= 6 && listToLoad.recruitmentSub.NumberOfGroups > 0) ? listToLoad.recruitmentSub.NumberOfGroups : 1;
-        for(var i = 1; i < 8 * numberOfGroups; i++) {
+        var slotFlags = presetToLoad.SlotFlags;
+        var numberOfGroups = (presetToLoad.recruitmentSub.NumberOfGroups <= 6 && presetToLoad.recruitmentSub.NumberOfGroups > 0) ? presetToLoad.recruitmentSub.NumberOfGroups : 1;
+        // Services.PluginLog.Verbose($"Number of Groups: {numberOfGroups}");
+        for(var i = 1; i < 8 * numberOfGroups; i++) { // shifts the "Omit" slots to the right like how to game handles it by default
             if((ulong)slotFlags[i] % 2 == 1) slotFlags[i]--;
-            if((ulong)slotFlags[i] > (ulong)0xFFFFFFFE) { // All roles
+            if((ulong)slotFlags[i] > (ulong)0xFFFFFFFE) { // 0xFFFFFFFE = All roles selected
                 Services.PluginLog.Verbose($"Slot {i + 1} is out of scope: {(ulong)slotFlags[i]}, {(long)slotFlags[i]}.");
                 slotFlags[i] = 0;
             }
             if((ulong) slotFlags[i] == 0) shiftSlotsInCurrentParty(ref slotFlags, i);
             (*CurrentData).SlotFlags[i] = (ulong)slotFlags[i];
-            Services.PluginLog.Verbose($"Slot {i+1} has been loaded.");
+            // Services.PluginLog.Verbose($"Slot {i+1} has been loaded.");
         }
 
-        var commentString = listToLoad.SeStrComment;
+        var commentString = presetToLoad.SeStrComment;
         var valid = isCommentValid(commentString);
-        Services.PluginLog.Info($"{valid}");
+        Services.PluginLog.Info($"Is comment valid: {valid}");
         //if(valid)
         //    Marshal.Copy(commentString, 0, (nint)(*CurrentData).Comment, 196);
         //else
         //    Services.PluginLog.Info("Comment is longer than it is allowed.");
-
-        *CurrentData = listToLoad.recruitmentSub;
         this.Plugin.GameFunctions.RCRefresh(0, 0);
 
-        Services.PluginLog.Info($"Preset: {listToLoad.Name} has been loaded.");
+        Services.PluginLog.Info($"--- Preset: \"{presetToLoad.Name}\" has been loaded. ---");
     }
 
     // Returns true if the AtkTextInputComponent wrapped comment is the same as non-wrapped comment
@@ -180,14 +187,14 @@ public unsafe class RecruitmentDataController : IDisposable
         Marshal.Copy(bytes, 0, testStr, bytes.Length);
         componentNode->SetText((byte*)testStr);
         var aa = componentNode->UnkText1;
-        Services.PluginLog.Info($"{aa.ToString()} .");
+        Services.PluginLog.Info($"UnkText1: {aa.ToString()} .");
         textNode->SetText((byte*)testStr);
         var bb = textNode->NodeText.ToString().Replace("\u0002\u0010\u0001\u0003", "");
-        Services.PluginLog.Info($"{bb.ToString()} .");
+        Services.PluginLog.Info($"NodeText: {bb.ToString()} .");
 
         return aa.ToString() == bb;
 
-        // These comments are here in case I wanna try fixing comments instead of 0'ing them
+        // These comments are here in case I wanna try cutting the comments instead of zero-ing them but probably not :3
         //Services.PluginLog.Verbose($"{textNode->NodeText.ToString()}");
         //Services.PluginLog.Verbose($"{textNode2->NodeText.ToString()}");
         //var nodeText = textNode->NodeText;
@@ -224,7 +231,7 @@ public unsafe class RecruitmentDataController : IDisposable
             if((SelectedCategory)selectedCategory == SelectedCategory.Raids || (SelectedCategory)selectedCategory == SelectedCategory.Pvp || (SelectedCategory)selectedCategory == SelectedCategory.FieldOperations)
                 categoryTab = findDutyCategoryTab((ContentFinderCondition)duty, (SelectedCategory)selectedCategory, categoryTab);
             return true;
-        }
+        } 
 
         if((SelectedCategory)selectedCategory == SelectedCategory.TreasureHunt)
             return dutyId <= 23;
