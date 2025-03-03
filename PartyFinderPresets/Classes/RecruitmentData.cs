@@ -67,6 +67,7 @@ public class RecruitmentData
         return slotFlags;
     }
 
+#if DEBUG
     // For debugging
     public void PrintData()
     {
@@ -110,4 +111,6 @@ public class RecruitmentData
         Services.PluginLog.Verbose($"Comment: {Comment}");
         Services.PluginLog.Verbose($"----");        
     }
+#endif
+
 }

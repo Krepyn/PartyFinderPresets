@@ -47,6 +47,7 @@ public sealed unsafe class DebugWindow : Window, IDisposable
         DrawRecruitmentTesting();
         DrawFormattingTesting();
         DrawNativeUITesting();
+        DrawLiveData();
     }
 
     private void DrawPresetLibraryTesting() {
@@ -207,8 +208,60 @@ public sealed unsafe class DebugWindow : Window, IDisposable
 
             Services.PluginLog.Verbose($"{textNodeStr}");
         }
+
+        if(ImGui.Button("Send Chat Echo")) {
+            Services.ChatGui.Print("aa");
+        }
     }
 
-    
-}
+    private void DrawLiveData() {
+        using var node = ImRaii.TreeNode("Data");
+        if(!node) return;
 
+        ImGui.TextColored(OrangeText, "Selected Tab: ");
+        ImGui.SameLine();
+        ImGui.Text($"{(CategoryTab)Plugin.RecruitmentDataController.CurrentAgent->GroupTypeTab} ({Plugin.RecruitmentDataController.CurrentAgent->GroupTypeTab})");
+
+        ImGui.TextColored(OrangeText, "Selected Category: ");
+        ImGui.SameLine();
+        ImGui.Text($"{(SelectedCategory)Plugin.RecruitmentDataController.CurrentData->SelectedCategory} ({Plugin.RecruitmentDataController.CurrentData->SelectedCategory})");
+
+        ImGui.TextColored(OrangeText, "Duty ID: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->SelectedDutyId}");
+
+        ImGui.TextColored(OrangeText, "Duty Objective: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->Objective} ({(byte)Plugin.RecruitmentDataController.CurrentData->Objective})");
+
+        ImGui.TextColored(OrangeText, "Completion Status: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->CompletionStatus} ({(byte)Plugin.RecruitmentDataController.CurrentData->CompletionStatus})");
+
+        ImGui.TextColored(OrangeText, "Duty Finder Settings: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->DutyFinderSettingFlags} ({(byte)Plugin.RecruitmentDataController.CurrentData->DutyFinderSettingFlags})");
+
+        ImGui.TextColored(OrangeText, "Loot Rule ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->LootRule} ({(byte)Plugin.RecruitmentDataController.CurrentData->LootRule})");
+
+        ImGui.TextColored(OrangeText, "Password: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->Password}");
+
+        ImGui.TextColored(OrangeText, "Language Flags: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentData->LanguageFlags} ({(byte)Plugin.RecruitmentDataController.CurrentData->LanguageFlags})");
+
+        ImGui.TextColored(OrangeText, "Average Item Level Enabled: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentAgent->AvgItemLvEnabled}");
+
+        ImGui.TextColored(OrangeText, "Average Item Level: ");
+        ImGui.SameLine();
+        ImGui.Text($"{Plugin.RecruitmentDataController.CurrentAgent->AvgItemLv}");
+
+
+    }
+}

@@ -15,6 +15,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using PartyFinderPresets.Utils;
 using System.ComponentModel;
 using System.Reflection.Metadata.Ecma335;
+using Dalamud.Plugin.Services;
 namespace PartyFinderPresets.Controllers;
 
 public unsafe class RecruitmentDataController : IDisposable
@@ -78,6 +79,15 @@ public unsafe class RecruitmentDataController : IDisposable
         var preset = RecruitmentPresets[index];
         preset.MakePresetFromCurrentData(preset.Name);
         this.Save();
+
+        Services.PluginLog.Verbose($"Preset {preset.Name} ({index}) has been updated.");
+    }
+
+    public void UpdatePreset(int index, RecruitmentData updatedPreset) {
+        RecruitmentPresets[index] = updatedPreset;
+        this.Save();
+
+        Services.PluginLog.Verbose($"Preset {RecruitmentPresets[index].Name} ({index}) has been updated.");
     }
 
     public void RenamePreset(int index, string presetName) {
@@ -91,53 +101,67 @@ public unsafe class RecruitmentDataController : IDisposable
         return RecruitmentPresets.Count;
     }
 
-    // TODO: Change preset save to default values if there is a problem with it and give a warning to the user
+    private void ErrorMessage(string message) {
+        Services.PluginLog.Verbose(message);
+        Services.ChatGui.Print(message);
+    }
+
+    // TODO:    Test the preset update and errors when faulty preset
+    //          Colored Error Messages
     public void LoadPreset(int index) {
         var presetToLoad = RecruitmentPresets[index];
         Services.PluginLog.Info($"--- Preset: \"{presetToLoad.Name}\" is loading. ---");
 
         var categoryTab = presetToLoad.CategoryTab;
         if(!(DutyIdIsValid(ref presetToLoad.recruitmentSub.SelectedCategory, ref categoryTab, presetToLoad.recruitmentSub.SelectedDutyId))) {
-            Services.PluginLog.Verbose("Error at duty ID");
-            return;
+            presetToLoad.recruitmentSub.SelectedDutyId = 0;
+            presetToLoad.recruitmentSub.SelectedCategory = 0;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the Duty ID, please select the correct duty again and update the preset.");
+            // Services.PluginLog.Verbose($"{DutyIdIsValid(ref presetToLoad.recruitmentSub.SelectedCategory, ref categoryTab, presetToLoad.recruitmentSub.SelectedDutyId)}");
         }
 
         var objective = presetToLoad.recruitmentSub.Objective;
         if(!(Enum.IsDefined(objective))) {
-            Services.PluginLog.Verbose("Error at duty Objective");
-            return;
+            presetToLoad.recruitmentSub.Objective = AgentLookingForGroup.Objective.None;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the Duty Objective, please select the correct objective again and update the preset.");
         }
 
         var completionStatus = presetToLoad.recruitmentSub.CompletionStatus;
         if(!Enum.IsDefined(completionStatus) && (byte)completionStatus != 1) {
-            Services.PluginLog.Verbose($"Error at Completion Status, {completionStatus}");
-            return;
+            presetToLoad.recruitmentSub.CompletionStatus = (AgentLookingForGroup.CompletionStatus)1;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the Completion Status, please select the correct Completion Status again and update the preset.");
         }
 
         var dutyFinderSettings = presetToLoad.recruitmentSub.DutyFinderSettingFlags;
         if(!(Enum.IsDefined(typeof(AgentLookingForGroup.DutyFinderSetting), dutyFinderSettings))) { // 00000111 
-            Services.PluginLog.Verbose("Error at duty finder settings");
-            return; 
+            presetToLoad.recruitmentSub.DutyFinderSettingFlags = AgentLookingForGroup.DutyFinderSetting.None;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the Duty Finder Settings, please select the correct Duty Finder Settings(Unrestricted Party, Minimum IL, Silence Echo) again and update the preset.");
         }
 
         var lootRule = presetToLoad.recruitmentSub.LootRule;
-        if(!Enum.IsDefined(lootRule)) // 00000010
-        {
-            Services.PluginLog.Verbose("Error at loot rule");
-            return;
+        if(!Enum.IsDefined(lootRule)) { // 00000010
+            presetToLoad.recruitmentSub.LootRule = AgentLookingForGroup.LootRule.Normal;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the Loot Rule, please select the correct Loot Rule again and update the preset.");
         }
 
         //var password = UInt16.Parse(listToLoad.Password);
         var password = presetToLoad.recruitmentSub.Password;
         if(password > 10000) {
-            Services.PluginLog.Verbose("Error at password");
-            return;
+            presetToLoad.recruitmentSub.Password = 10000;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the password, please set the password again and update the preset.");
         }
 
         var language = presetToLoad.recruitmentSub.LanguageFlags;
         if((byte)language > 15) { // 00001111
-            Services.PluginLog.Verbose("Error at language flags");
-            return;
+            presetToLoad.recruitmentSub.LanguageFlags = (AgentLookingForGroup.Language)15;
+            UpdatePreset(index, presetToLoad);
+            ErrorMessage("Error while loading the Language, please set the correct Language(s) again and update the preset.");
         }
 
         CurrentAgent->AvgItemLvEnabled = presetToLoad.AvgItemLvEnabled;
@@ -222,12 +246,15 @@ public unsafe class RecruitmentDataController : IDisposable
             var duty = findCondition(dutyId);
             if(duty == null) return false;
             selectedCategory = (ushort)findDutyCategory((ContentFinderCondition)duty);
-            if(dutyId == 1010) { // Chaotic Cloud of Darkness(Id = 1010) can be queued as either Normal or Alliance soooo...
+
+            // Chaotic Cloud of Darkness(Id = 1010) can be queued as either Normal or Alliance with the same ID soooo...
+            if(dutyId == 1010) {
                 if(categoryTab == CategoryTab.CustomMatch)
                     categoryTab = CategoryTab.Normal;
             } else {
                 categoryTab = CategoryTab.Normal;
             }
+
             if((SelectedCategory)selectedCategory == SelectedCategory.Raids || (SelectedCategory)selectedCategory == SelectedCategory.Pvp || (SelectedCategory)selectedCategory == SelectedCategory.FieldOperations)
                 categoryTab = findDutyCategoryTab((ContentFinderCondition)duty, (SelectedCategory)selectedCategory, categoryTab);
             return true;
