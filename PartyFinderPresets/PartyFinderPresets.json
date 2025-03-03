@@ -1,12 +1,11 @@
 {
   "Author": "Krepyn",
   "Name": "Party Finder Templates",
-  "Punchline": "A short one-liner that shows up in /xlplugins.",
+  "Punchline": "Presets for partyfinder recruitment.",
   "Description": "A description that shows up in /xlplugins. List any major slash-command(s).",
   "ApplicableVersion": "any",
   "Tags": [
-    "sample",
-    "plugin",
-    "goats"
-  ]
+    "plugin"
+  ],
+  "RepoURL": "https://github.com/Krepyn/PartyFinderPresets"
 }

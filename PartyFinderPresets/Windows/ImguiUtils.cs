@@ -1,17 +1,23 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PartyFinderPresets.Windows;
 
-internal static class ImguiUtils
-{
+internal static class ImguiUtils {
+    public static ImRaii.Style NoItemSpacingX() =>
+        ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0, ImGui.GetStyle().ItemSpacing.Y));
 
-        //public static void SelectableHoverOverDelete() {
+    public static ImRaii.Style NoFrameRounding() =>
+        ImRaii.PushStyle(ImGuiStyleVar.FrameRounding, 0);
+
+    //public static void SelectableHoverOverDelete() {
     //            if (ImGui.IsItemHovered())
     //            {
     //                ImGui.PushFont(UiBuilder.IconFont);
@@ -21,45 +27,45 @@ internal static class ImguiUtils
     //                ImGui.PopFont();
 
     //            }
-        //    int? switchTo;
-        //    bool deleteConfirm;
+    //    int? switchTo;
+    //    bool deleteConfirm;
 
-        //    var mouseDown = ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        //    var mouseClicked = ImGui.IsMouseReleased(ImGuiMouseButton.Left);
-        //    if (ImGui.IsItemHovered() || mouseDown)
-        //    {
-        //        if (mouseClicked)
-        //        {
-        //            switchTo = null;
+    //    var mouseDown = ImGui.IsMouseDown(ImGuiMouseButton.Left);
+    //    var mouseClicked = ImGui.IsMouseReleased(ImGuiMouseButton.Left);
+    //    if (ImGui.IsItemHovered() || mouseDown)
+    //    {
+    //        if (mouseClicked)
+    //        {
+    //            switchTo = null;
 
-        //            if (deleteConfirm)
-        //            {
-        //                deleteConfirm = false;
-        //                if (selectedIndex == presetIndex)
-        //                {
-        //                    switchTo = -1;
-        //                }
+    //            if (deleteConfirm)
+    //            {
+    //                deleteConfirm = false;
+    //                if (selectedIndex == presetIndex)
+    //                {
+    //                    switchTo = -1;
+    //                }
 
-        //                Plugin.RecruitmentDataController.RecruitmentPresets.RemoveAt(presetIndex);
-        //            }
-        //                                    else
-        //                                    {
-        //                deleteConfirm = true;
-        //            }
-        //            }
-        //    }
-        //    else
-        //    {
-        //        deleteConfirm = false;
-        //    }
+    //                Plugin.RecruitmentDataController.RecruitmentPresets.RemoveAt(presetIndex);
+    //            }
+    //                                    else
+    //                                    {
+    //                deleteConfirm = true;
+    //            }
+    //            }
+    //    }
+    //    else
+    //    {
+    //        deleteConfirm = false;
+    //    }
 
-        //    if (deleteConfirm)
-        //    {
-        //        ImGui.BeginTooltip();
-        //        ImGui.TextUnformatted("Click delete again to confirm.");
-        //        ImGui.EndTooltip();
-        //    }
-        //}
+    //    if (deleteConfirm)
+    //    {
+    //        ImGui.BeginTooltip();
+    //        ImGui.TextUnformatted("Click delete again to confirm.");
+    //        ImGui.EndTooltip();
+    //    }
+    //}
     //}
 
 }

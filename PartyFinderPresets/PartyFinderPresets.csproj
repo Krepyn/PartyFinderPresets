@@ -3,10 +3,13 @@
   <PropertyGroup>
     <Version>0.0.0.1</Version>
     <Description>A sample plugin.</Description>
-    <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Krepyn/PartyFinderPresets</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="PartyFinderPresets.json" />
+  </ItemGroup>
 
   <!--<ItemGroup>
     <Content Include="..\Data\goat.png">

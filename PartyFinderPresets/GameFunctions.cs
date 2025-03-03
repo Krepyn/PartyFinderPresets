@@ -27,7 +27,7 @@ public sealed unsafe class GameFunctions : IDisposable
     // param1: Current Recruitment Status => 0 = Currently Not Recruiting, 1 = Currently Recruiting
     // param2: Unknown => 0 or 1, dunno what it does??
     private delegate void RCRefreshDelegate(AgentLookingForGroup* param1, ulong param2, char param3);
-    //Old Sig 7.05 -> [Signature("E8 ?? ?? ?? ?? 4D 89 BE ?? ?? ?? ?? 4D 89 BE")] 
+    // Old Sig 7.05 -> [Signature("E8 ?? ?? ?? ?? 4D 89 BE ?? ?? ?? ?? 4D 89 BE")] 
     [Signature("E8 ?? ?? ?? ?? 4D 89 A7 ?? ?? ?? ?? 4D 89 A7")]
     private readonly RCRefreshDelegate? _addonRefresh;
     [Signature("E8 ?? ?? ?? ?? 4D 89 A7 ?? ?? ?? ?? 4D 89 A7", DetourName = nameof(RCRefreshHook))]
@@ -62,9 +62,8 @@ public sealed unsafe class GameFunctions : IDisposable
 
     private void RCRefreshHook(AgentLookingForGroup* param1, ulong param2, char param3)
     {
-            Services.PluginLog.Verbose("Ping.");
         try {
-            Services.PluginLog.Verbose($"Recruitment Criteria Opened: {param2}, {(int)param3}");
+            // Services.PluginLog.Verbose($"Recruitment Criteria Opened: {param2}, {(int)param3}");
             LastRefreshCondition = (int)param2;
         } catch(Exception ex) {
             Services.PluginLog.Error($"An error happened while hooking RCRefresh: {ex}");
@@ -83,10 +82,11 @@ public sealed unsafe class GameFunctions : IDisposable
                 throw new InvalidOperationException("ConditionUpdate signature wasn't found");
             }
 
-            Services.PluginLog.Verbose("------");
-            Services.PluginLog.Verbose($"AtkValue #0: Type = {param2[0].Type}, Value = {param2[0].GetValueAsString()}");
-            Services.PluginLog.Verbose($"AtkValue #1: Type = {param2[1].Type}, Value = {param2[1].GetValueAsString()}");
-            Services.PluginLog.Verbose($"AtkValue #2: Type = {param2[2].Type}, Value = {param2[2].GetValueAsString()}");
+            //Services.PluginLog.Verbose("------");
+            //Services.PluginLog.Verbose($"AtkValue #0: Type = {param2[0].Type}, Value = {param2[0].GetValueAsString()}");
+            //Services.PluginLog.Verbose($"AtkValue #1: Type = {param2[1].Type}, Value = {param2[1].GetValueAsString()}");
+            //Services.PluginLog.Verbose($"AtkValue #2: Type = {param2[2].Type}, Value = {param2[2].GetValueAsString()}");
+            //Services.PluginLog.Verbose("------");
         } catch(Exception ex) {
             Services.PluginLog.Error($"An error happened while hooking RCUpdateValues: {ex}");
         }
